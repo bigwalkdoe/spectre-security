@@ -1,0 +1,125 @@
+name: Infrastructure Drift Detection
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [main, develop]
+
+jobs:
+  drift-detection:
+    name: Infrastructure Drift Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Run Drift Detection
+        id: drift
+        run: |
+          chmod +x security/drift-detection.sh
+          ./security/drift-detection.sh
+        continue-on-error: true
+      
+      - name: Upload Drift Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-report
+          path: security/logs/drift-report-*
+          retention-days: 30
+      
+      - name: Create/Update Drift Issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const logsDir = 'security/logs';
+            const files = fs.readdirSync(logsDir).filter(f => f.startsWith('drift-report-') && f.endsWith('.json'));
+            
+            if (files.length === 0) {
+              console.log('No drift reports found');
+              return;
+            }
+            
+            const latest = files.sort().reverse()[0];
+            const report = JSON.parse(fs.readFileSync(path.join(logsDir, latest), 'utf8'));
+            const driftCount = Object.values(report.categories || {}).flatMap(c => Object.keys(c)).length;
+            const driftDetected = report.drift_detected;
+            
+            const title = `🔍 Infrastructure Drift Detection - ${driftDetected ? driftCount + ' Issues' : 'Clean'}`;
+            
+            let body = `## Infrastructure Drift Detection Report\n\n`;
+            body += `**Run:** ${process.env.GITHUB_RUN_ID}\n`;
+            body += `**Time:** ${new Date().toISOString()}\n`;
+            body += `**Status:** ${driftDetected ? '⚠️ Drift Detected' : '✅ No Drift'}\n`;
+            body += `**Issues Found:** ${driftCount}\n\n`;
+            
+            if (driftDetected) {
+              body += `### Details\n`;
+              for (const [category, checks] of Object.entries(report.categories)) {
+                body += `\n#### ${category}\n`;
+                for (const [check, details] of Object.entries(checks)) {
+                  body += `- **${check}**: ${details.status} (expected: ${details.expected}, actual: ${details.actual})\n`;
+                }
+              }
+              body += `\n> View full report in workflow artifacts or run \`./security/drift-detection.sh\` locally.`;
+            }
+            
+            // Check for existing open issue
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['drift-detection'],
+              per_page: 10
+            });
+            
+            const existingIssue = issues.find(issue => issue.title.startsWith('🔍 Infrastructure Drift Detection'));
+            
+            if (existingIssue) {
+              // Update existing issue
+              if (driftDetected) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existingIssue.number,
+                  title: title,
+                  body: body,
+                  state: 'open'
+                });
+                console.log(`Updated existing drift issue #${existingIssue.number}`);
+              } else {
+                // Close issue if no drift
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existingIssue.number,
+                  state: 'closed',
+                  state_reason: 'completed'
+                });
+                console.log(`Closed drift issue #${existingIssue.number} - no drift detected`);
+              }
+            } else if (driftDetected) {
+              // Create new issue
+              const { data: newIssue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['drift-detection', 'security', 'automated']
+              });
+              console.log(`Created new drift issue #${newIssue.number}`);
+            }

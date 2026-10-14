@@ -1,0 +1,1141 @@
+{
+  "backup": {
+    "encrypted": true,
+    "retention_days": 30,
+    "offsite_replication": true,
+    "last_success_age": 3600
+  },
+  "docker": [
+    {
+      "name": "arcvantiq-api-edge-1",
+      "image": "arcvantiq-api-edge",
+      "privileged": false,
+      "memory_limit": 402653184,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/readyz')",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 8000,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-console-1",
+      "image": "arcvantiq-console",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 3000,
+          "container_port": 3000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-security-service-1",
+      "image": "arcvantiq-security-service",
+      "privileged": false,
+      "memory_limit": 536870912,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8108,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-ops-1",
+      "image": "arcvantiq-ops",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:8080 || exit 1",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 3004,
+          "container_port": 8080
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-ops-bridge-1",
+      "image": "arcvantiq-ops-bridge",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8050/health', timeout=2)\" || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8050,
+          "container_port": 8050
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-gateway-1",
+      "image": "arcvantiq-gateway",
+      "privileged": false,
+      "memory_limit": 402653184,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 18080,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-tools-service-1",
+      "image": "arcvantiq-tools-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://localhost:8010/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8104,
+          "container_port": 8010
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-policy-service-1",
+      "image": "arcvantiq-policy-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8006/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8008,
+          "container_port": 8006
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/arcvantiq/deploy/verticals",
+          "destination": "/etc/modelink/verticals",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-control-plane-1",
+      "image": "arcvantiq-control-plane",
+      "privileged": false,
+      "memory_limit": 402653184,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://localhost:8006/health || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8007,
+          "container_port": 8006
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/arcvantiq/deploy/verticals",
+          "destination": "/etc/modelink/verticals",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-governance-service-1",
+      "image": "arcvantiq-governance-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8000/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8040,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-mcp-gateway-1",
+      "image": "arcvantiq-mcp-gateway",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8020/healthz",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8020,
+          "container_port": 8020
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-secrets-service-1",
+      "image": "arcvantiq-secrets-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8003/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8013,
+          "container_port": 8003
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-identity-1",
+      "image": "arcvantiq-identity",
+      "privileged": false,
+      "memory_limit": 402653184,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8001,
+          "container_port": 8001
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-usage-worker-1",
+      "image": "arcvantiq-usage-worker",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget -q --spider http://127.0.0.1:9102/healthz || exit 1",
+      "ports": [],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-delivery-worker-1",
+      "image": "arcvantiq-delivery-worker",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8015/health')\"",
+      "ports": [],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-analytics-service-1",
+      "image": "arcvantiq-analytics-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8009,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-grafana-1",
+      "image": "grafana/grafana:latest",
+      "privileged": false,
+      "memory_limit": 805306368,
+      "healthcheck": "CMD-SHELL wget -q --spider http://127.0.0.1:3000/api/health || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 19302,
+          "container_port": 3000
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/arcvantiq/tooling/grafana/provisioning",
+          "destination": "/etc/grafana/provisioning",
+          "type": "bind"
+        },
+        {
+          "source": "/var/lib/docker/volumes/arcvantiq_grafana_data/_data",
+          "destination": "/var/lib/grafana",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/tooling/grafana/dashboards",
+          "destination": "/var/lib/grafana/dashboards",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-knowledge-service-1",
+      "image": "arcvantiq-knowledge-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8101,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-messaging-api-1",
+      "image": "arcvantiq-messaging-api",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8011/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8011,
+          "container_port": 8011
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-notification-service-1",
+      "image": "arcvantiq-notification-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8010/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8010,
+          "container_port": 8010
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-deployment-api-1",
+      "image": "arcvantiq-deployment-api",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8110,
+          "container_port": 8100
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-billing-service-1",
+      "image": "arcvantiq-billing-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8005/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8005,
+          "container_port": 8005
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-scheduler-service-1",
+      "image": "arcvantiq-scheduler-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8005/health')\"",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8105,
+          "container_port": 8005
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-workflow-service-1",
+      "image": "arcvantiq-workflow-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8007/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8103,
+          "container_port": 8007
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-provider-service-1",
+      "image": "arcvantiq-provider-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8000/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8003,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-marketplace-service-1",
+      "image": "arcvantiq-marketplace-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8015/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8015,
+          "container_port": 8015
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-agent-service-1",
+      "image": "arcvantiq-agent-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=2)",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8100,
+          "container_port": 8100
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-audit-service-1",
+      "image": "arcvantiq-audit-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -sf http://localhost:8002/health",
+      "ports": [],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-arcvantiq-web-1",
+      "image": "arcvantiq-arcvantiq-web",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:8080 || exit 1",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 3005,
+          "container_port": 8080
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-prompt-service-1",
+      "image": "arcvantiq-prompt-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request;urllib.request.urlopen('http://127.0.0.1:8014/health')",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8014,
+          "container_port": 8014
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-routing-service-1",
+      "image": "arcvantiq-routing-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:8012/health",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8004,
+          "container_port": 8012
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-vector-service-1",
+      "image": "arcvantiq-vector-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD python -c import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8102,
+          "container_port": 8000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-clickhouse-1",
+      "image": "clickhouse/clickhouse-server:24.8-alpine",
+      "privileged": false,
+      "memory_limit": 2147483648,
+      "healthcheck": "CMD clickhouse-client --query SELECT 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8123,
+          "container_port": 8123
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9000,
+          "container_port": 9000
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/arcvantiq/ci/clickhouse-config.xml",
+          "destination": "/etc/clickhouse-server/config.xml",
+          "type": "bind"
+        },
+        {
+          "source": "/var/lib/docker/volumes/arcvantiq_clickhouse_data/_data",
+          "destination": "/var/lib/clickhouse",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/ci/clickhouse-diagnostics.xml",
+          "destination": "/etc/clickhouse-server/config.d/zz-diagnostics.xml",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/ci/clickhouse-memory.xml",
+          "destination": "/etc/clickhouse-server/config.d/zz-memory.xml",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/ci/clickhouse-users.xml",
+          "destination": "/etc/clickhouse-server/users.d/zz-memory.xml",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-prometheus-1",
+      "image": "prom/prometheus:latest",
+      "privileged": false,
+      "memory_limit": 402653184,
+      "healthcheck": "CMD-SHELL wget -q --spider http://localhost:9090/-/healthy || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 19090,
+          "container_port": 9090
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/a612dff2c5fee0974291e7256f0c05f01b061f651351b0e4e338fa17e52db9a0/_data",
+          "destination": "/prometheus",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/tooling/prometheus.yml",
+          "destination": "/etc/prometheus/prometheus.yml",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-incident-service-1",
+      "image": "arcvantiq-incident-service",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/health')\"",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8030,
+          "container_port": 8030
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-web-1",
+      "image": "arcvantiq-web",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 3001,
+          "container_port": 3000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-mock-ai-1",
+      "image": "arcvantiq-mock-ai",
+      "privileged": false,
+      "memory_limit": 536870912,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:9090/health || exit 1",
+      "ports": [],
+      "mounts": []
+    },
+    {
+      "name": "arcvantiq-minio-1",
+      "image": "bitnamilegacy/minio:2025.7.23",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD curl -f http://localhost:9000/minio/health/live",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 19100,
+          "container_port": 9000
+        },
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 19101,
+          "container_port": 9001
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/d1109ae5b9bfae8e2833595c19d7bc162b10d83a4cedff271fce66ac780e29d0/_data",
+          "destination": "/certs",
+          "type": "volume"
+        },
+        {
+          "source": "/var/lib/docker/volumes/arcvantiq_minio_data/_data",
+          "destination": "/data",
+          "type": "volume"
+        },
+        {
+          "source": "/var/lib/docker/volumes/0901e2a38e1c65dc2dc7e577a75e28590605342800b08d21a6e3941c76849381/_data",
+          "destination": "/bitnami/minio/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-postgres-1",
+      "image": "postgres:16-alpine",
+      "privileged": false,
+      "memory_limit": 805306368,
+      "healthcheck": "CMD-SHELL pg_isready -h 127.0.0.1 -U modelink -d modelink",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 15432,
+          "container_port": 5432
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/arcvantiq/deploy/postgres/init",
+          "destination": "/docker-entrypoint-initdb.d",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/arcvantiq/modelink-data/migrations/postgresql",
+          "destination": "/modelink-migrations",
+          "type": "bind"
+        },
+        {
+          "source": "/var/lib/docker/volumes/arcvantiq_postgres_data/_data",
+          "destination": "/var/lib/postgresql/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "arcvantiq-redis-1",
+      "image": "redis:7-alpine",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD redis-cli ping",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 6379,
+          "container_port": 6379
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/arcvantiq_redis_data/_data",
+          "destination": "/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "analytics-migration-check",
+      "image": "modelink-analytics-diag",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "CMD-SHELL curl -sf http://localhost:8000/health || exit 1",
+      "ports": [],
+      "mounts": []
+    },
+    {
+      "name": "modelink-workstation-workstation-web-1",
+      "image": "modelink-workstation-workstation-web",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "CMD-SHELL node -e \"fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+      "ports": [
+        {
+          "host_ip": "",
+          "host_port": 19601,
+          "container_port": 3000
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "prometheus",
+      "image": "prom/prometheus:v3.13.4",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9090,
+          "container_port": 9090
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/spectre-system-maintenance-suite_prometheus-data/_data",
+          "destination": "/prometheus",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/business-metrics",
+          "destination": "/textfile",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus",
+          "destination": "/etc/prometheus",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "infisical-backend",
+      "image": "infisical/infisical:latest",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8088,
+          "container_port": 8080
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "infisical-db",
+      "image": "postgres:14-alpine",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "CMD-SHELL pg_isready --username=infisical && psql --username=infisical --list",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/infisical_pg_data/_data",
+          "destination": "/var/lib/postgresql/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "infisical-dev-redis",
+      "image": "redis",
+      "privileged": false,
+      "memory_limit": 0,
+      "healthcheck": "",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/infisical_redis_data/_data",
+          "destination": "/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "redis",
+      "image": "redis:8.10.2",
+      "privileged": false,
+      "memory_limit": 134217728,
+      "healthcheck": "",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/spectre-system-maintenance-suite_redis-data/_data",
+          "destination": "/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "grafana",
+      "image": "grafana/grafana:13.0",
+      "privileged": false,
+      "memory_limit": 1073741824,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 3002,
+          "container_port": 3000
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/spectre-system-maintenance-suite_grafana-data/_data",
+          "destination": "/var/lib/grafana",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/grafana-dashboards",
+          "destination": "/etc/grafana/provisioning/dashboards",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/grafana-provisioning",
+          "destination": "/etc/grafana/provisioning/datasources",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "web-dashboard",
+      "image": "nginx:1.30.5-alpine",
+      "privileged": false,
+      "memory_limit": 134217728,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8081,
+          "container_port": 80
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/web-dashboard/nginx.conf",
+          "destination": "/etc/nginx/conf.d/default.conf",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/web-dashboard",
+          "destination": "/usr/share/nginx/html",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "node-exporter",
+      "image": "prom/node-exporter:v1.12.1",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9100,
+          "container_port": 9100
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/",
+          "destination": "/rootfs",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/business-metrics",
+          "destination": "/textfile",
+          "type": "bind"
+        },
+        {
+          "source": "/proc",
+          "destination": "/host/proc",
+          "type": "bind"
+        },
+        {
+          "source": "/sys",
+          "destination": "/host/sys",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "alertmanager",
+      "image": "prom/alertmanager:v0.34.1",
+      "privileged": false,
+      "memory_limit": 536870912,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9093,
+          "container_port": 9093
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/spectre-system-maintenance-suite_alertmanager-data/_data",
+          "destination": "/alertmanager",
+          "type": "volume"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/alertmanager.yml",
+          "destination": "/etc/alertmanager/alertmanager.yml",
+          "type": "bind"
+        },
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/alertmanager-secrets",
+          "destination": "/etc/alertmanager/secrets",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "blackbox-exporter",
+      "image": "prom/blackbox-exporter:v0.28.0",
+      "privileged": false,
+      "memory_limit": 1073741824,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9115,
+          "container_port": 9115
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/blackbox-exporter.yml",
+          "destination": "/config/blackbox-exporter.yml",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "redis-exporter",
+      "image": "oliver006/redis_exporter:v1.92.1",
+      "privileged": false,
+      "memory_limit": 536870912,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9121,
+          "container_port": 9121
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "cadvisor",
+      "image": "gcr.io/cadvisor/cadvisor:v0.55.1",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --quiet --tries=1 --spider $CADVISOR_HEALTHCHECK_URL || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8080,
+          "container_port": 8080
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/",
+          "destination": "/rootfs",
+          "type": "bind"
+        },
+        {
+          "source": "/sys",
+          "destination": "/sys",
+          "type": "bind"
+        },
+        {
+          "source": "/dev/disk",
+          "destination": "/dev/disk",
+          "type": "bind"
+        },
+        {
+          "source": "/var/run",
+          "destination": "/var/run",
+          "type": "bind"
+        },
+        {
+          "source": "/var/lib/docker",
+          "destination": "/var/lib/docker",
+          "type": "bind"
+        }
+      ]
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:16.15",
+      "privileged": false,
+      "memory_limit": 536870912,
+      "healthcheck": "",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/spectre-system-maintenance-suite_postgres-data/_data",
+          "destination": "/var/lib/postgresql/data",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "postgres-exporter",
+      "image": "prometheuscommunity/postgres-exporter:v0.20.1",
+      "privileged": false,
+      "memory_limit": 134217728,
+      "healthcheck": "",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 9187,
+          "container_port": 9187
+        }
+      ],
+      "mounts": []
+    },
+    {
+      "name": "buildx_buildkit_composebuild0",
+      "image": "moby/buildkit:buildx-stable-1",
+      "privileged": true,
+      "memory_limit": 0,
+      "healthcheck": "",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/buildx_buildkit_composebuild0_state/_data",
+          "destination": "/var/lib/buildkit",
+          "type": "volume"
+        }
+      ]
+    },
+    {
+      "name": "buildx_buildkit_builder-b17858fc-5031-4cb6-bdd5-2ce53cbd76770",
+      "image": "moby/buildkit:buildx-stable-1",
+      "privileged": true,
+      "memory_limit": 0,
+      "healthcheck": "",
+      "ports": [],
+      "mounts": [
+        {
+          "source": "/var/lib/docker/volumes/buildx_buildkit_builder-b17858fc-5031-4cb6-bdd5-2ce53cbd76770_state/_data",
+          "destination": "/var/lib/buildkit",
+          "type": "volume"
+        }
+      ]
+    }
+  ],
+  "network": {
+    "remote_access": true,
+    "vpn_enabled": true,
+    "container_network": "bridge",
+    "open_ports": [
+      "3000",
+      "3001",
+      "3002",
+      "3004",
+      "3005",
+      "6379",
+      "8000",
+      "8001",
+      "8003",
+      "8004",
+      "8005",
+      "8007",
+      "8008",
+      "8009",
+      "8010",
+      "8011",
+      "8013",
+      "8014",
+      "8015",
+      "8020",
+      "8030",
+      "8040",
+      "8050",
+      "8080",
+      "8081",
+      "8088",
+      "8100",
+      "8101",
+      "8102",
+      "8103",
+      "8104",
+      "8105",
+      "8108",
+      "8110",
+      "8123",
+      "9000",
+      "9090",
+      "9093",
+      "9100",
+      "9115",
+      "9121",
+      "9187",
+      "15432",
+      "18080",
+      "19090",
+      "19100",
+      "19101",
+      "19302",
+      "19601"
+    ]
+  },
+  "compliance": {
+    "firewall_enabled": true,
+    "ssh_password_auth": false,
+    "audit_logging_enabled": true,
+    "intrusion_detection_active": true,
+    "file_integrity_monitoring": true,
+    "security_scanning_enabled": true
+  },
+  "updated": 1791998823.628797,
+  "updated_iso": "2026-10-14T17:27:03Z"
+}

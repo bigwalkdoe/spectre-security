@@ -1,0 +1,10 @@
+{
+  "SchemaVersion": 2,
+  "Trivy": {
+    "Version": "0.69.3"
+  },
+  "ReportID": "01a10481-9ab5-7352-86f0-37f292bf05e2",
+  "CreatedAt": "2026-10-04T06:22:45.045219581+05:00",
+  "ArtifactName": "/home/deon/projects",
+  "ArtifactType": "filesystem"
+}

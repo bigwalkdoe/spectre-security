@@ -1,0 +1,158 @@
+{
+  "timestamp": "2026-10-14T22:09:26+05:00",
+  "baseline_file": "/home/deon/dev/github/scripts/security/test-data/current-infrastructure.json",
+  "drift_detected": true,
+  "categories": {
+    "docker": {
+      "arcvantiq-console.existence": {
+        "expected": "running",
+        "actual": "not found",
+        "status": "DRIFT"
+      },
+      "arcvantiq-security-service.existence": {
+        "expected": "running",
+        "actual": "not found",
+        "status": "DRIFT"
+      },
+      "prometheus.memory_limit": {
+        "expected": "4294967296",
+        "actual": "0",
+        "status": "DRIFT"
+      },
+      "prometheus.healthcheck": {
+        "expected": "http://localhost:9090/-/healthy",
+        "actual": "",
+        "status": "DRIFT"
+      },
+      "prometheus.ports": {
+        "expected": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":9090}]",
+        "actual": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":9090,\"container_port\":9090}]",
+        "status": "DRIFT"
+      },
+      "prometheus.mounts": {
+        "expected": "[{\"source\":\"/data/prometheus\"}]",
+        "actual": "[{\"source\":\"/var/lib/docker/volumes/spectre-system-maintenance-suite_prometheus-data/_data\",\"destination\":\"/prometheus\",\"type\":\"volume\"},{\"source\":\"/home/deon/dev/github/spectre-system-maintenance-suite/prometheus/business-metrics\",\"destination\":\"/textfile\",\"type\":\"bind\"},{\"source\":\"/home/deon/dev/github/spectre-system-maintenance-suite/prometheus\",\"destination\":\"/etc/prometheus\",\"type\":\"bind\"}]",
+        "status": "DRIFT"
+      },
+      "grafana.healthcheck": {
+        "expected": "http://localhost:3002/api/health",
+        "actual": "",
+        "status": "DRIFT"
+      },
+      "grafana.ports": {
+        "expected": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":3002}]",
+        "actual": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":3002,\"container_port\":3000}]",
+        "status": "DRIFT"
+      },
+      "grafana.mounts": {
+        "expected": "[{\"source\":\"/data/grafana\"}]",
+        "actual": "[{\"source\":\"/var/lib/docker/volumes/spectre-system-maintenance-suite_grafana-data/_data\",\"destination\":\"/var/lib/grafana\",\"type\":\"volume\"},{\"source\":\"/home/deon/dev/github/spectre-system-maintenance-suite/grafana-dashboards\",\"destination\":\"/etc/grafana/provisioning/dashboards\",\"type\":\"bind\"},{\"source\":\"/home/deon/dev/github/spectre-system-maintenance-suite/grafana-provisioning\",\"destination\":\"/etc/grafana/provisioning/datasources\",\"type\":\"bind\"}]",
+        "status": "DRIFT"
+      },
+      "clickhouse.existence": {
+        "expected": "running",
+        "actual": "not found",
+        "status": "DRIFT"
+      },
+      "postgres.memory_limit": {
+        "expected": "2147483648",
+        "actual": "536870912",
+        "status": "DRIFT"
+      },
+      "postgres.healthcheck": {
+        "expected": "pg_isready -h localhost -p 5432",
+        "actual": "",
+        "status": "DRIFT"
+      },
+      "postgres.ports": {
+        "expected": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":5432}]",
+        "actual": "[]",
+        "status": "DRIFT"
+      },
+      "postgres.mounts": {
+        "expected": "[{\"source\":\"/data/postgres\"}]",
+        "actual": "[{\"source\":\"/var/lib/docker/volumes/spectre-system-maintenance-suite_postgres-data/_data\",\"destination\":\"/var/lib/postgresql/data\",\"type\":\"volume\"}]",
+        "status": "DRIFT"
+      },
+      "redis.memory_limit": {
+        "expected": "1073741824",
+        "actual": "134217728",
+        "status": "DRIFT"
+      },
+      "redis.healthcheck": {
+        "expected": "redis-cli ping",
+        "actual": "",
+        "status": "DRIFT"
+      },
+      "redis.ports": {
+        "expected": "[{\"host_ip\":\"127.0.0.1\",\"host_port\":6379}]",
+        "actual": "[]",
+        "status": "DRIFT"
+      },
+      "redis.mounts": {
+        "expected": "[{\"source\":\"/data/redis\"}]",
+        "actual": "[{\"source\":\"/var/lib/docker/volumes/spectre-system-maintenance-suite_redis-data/_data\",\"destination\":\"/data\",\"type\":\"volume\"}]",
+        "status": "DRIFT"
+      }
+    },
+    "network": {
+      "unexpected_0.0.0.0_port_3000": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3001": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3004": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3005": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_8000": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_18080": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_19601": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "missing_binding_port_5432": {
+        "expected": "bound",
+        "actual": "not bound",
+        "status": "POTENTIAL_DRIFT"
+      },
+      "missing_binding_port_8443": {
+        "expected": "bound",
+        "actual": "not bound",
+        "status": "POTENTIAL_DRIFT"
+      }
+    },
+    "compliance": {
+      "audit_logging_enabled": {
+        "expected": "true",
+        "actual": "false",
+        "status": "DRIFT"
+      },
+      "intrusion_detection_active": {
+        "expected": "true",
+        "actual": "false",
+        "status": "DRIFT"
+      }
+    }
+  }
+}

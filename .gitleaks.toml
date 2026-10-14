@@ -1,0 +1,14 @@
+# Gitleaks Configuration
+title = "Repository Secret Scanning"
+
+[allowlist]
+description = "Allowlist for known false positives"
+paths = [
+    "security/reports/",           # Trivy scan reports contain GPG keys
+    "security/aide/",              # AIDE database files
+    "security/logs/",              # Log files
+]
+regexes = [
+    ".*\\.json$",                  # JSON report files
+    ".*\\.log$",                   # Log files
+]

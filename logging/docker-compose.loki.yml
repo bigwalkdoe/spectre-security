@@ -1,0 +1,53 @@
+services:
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/mnt/config/loki-config.yml:Z
+      - loki-data:/loki
+    command: -config.file=/mnt/config/loki-config.yml
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    restart: unless-stopped
+    networks:
+      - logging
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail-config.yml:/mnt/config/promtail-config.yml:Z
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /home/deon/scripts/logs:/home/deon/scripts/logs:ro,Z
+    command: -config.file=/mnt/config/promtail-config.yml
+    restart: unless-stopped
+    networks:
+      - logging
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-logging
+    ports:
+      - "3003:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=changeme
+      # Plugin install disabled due to DNS constraints on this host
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:Z
+    restart: unless-stopped
+    networks:
+      - logging
+
+volumes:
+  loki-data:
+  grafana-data:
+
+networks:
+  logging:
+    driver: bridge

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-15T02:24:14+05:00",
+  "baseline_file": "/home/deon/dev/github/scripts/security/test-data/current-infrastructure.json",
+  "drift_detected": true,
+  "categories": {
+    "compliance": {
+      "audit_logging_enabled": {
+        "expected": "true",
+        "actual": "false",
+        "status": "DRIFT"
+      }
+    }
+  }
+}

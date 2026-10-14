@@ -1,0 +1,80 @@
+{
+  "backup": {
+    "encrypted": true,
+    "retention_days": 30,
+    "offsite_replication": true,
+    "last_success_age": 3600
+  },
+  "docker": [
+    {
+      "name": "arcvantiq-console",
+      "privileged": false,
+      "mounts": [{"source": "/data/console"}],
+      "memory_limit": 2147483648,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 8080}],
+      "healthcheck": "http://localhost:8080/health"
+    },
+    {
+      "name": "arcvantiq-security-service",
+      "privileged": false,
+      "mounts": [{"source": "/data/security"}],
+      "memory_limit": 1073741824,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 8443}],
+      "healthcheck": "http://localhost:8443/health"
+    },
+    {
+      "name": "prometheus",
+      "privileged": false,
+      "mounts": [{"source": "/data/prometheus"}],
+      "memory_limit": 4294967296,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 9090}],
+      "healthcheck": "http://localhost:9090/-/healthy"
+    },
+    {
+      "name": "grafana",
+      "privileged": false,
+      "mounts": [{"source": "/data/grafana"}],
+      "memory_limit": 1073741824,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 3002}],
+      "healthcheck": "http://localhost:3002/api/health"
+    },
+    {
+      "name": "clickhouse",
+      "privileged": false,
+      "mounts": [{"source": "/data/clickhouse"}],
+      "memory_limit": 8589934592,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 8123}],
+      "healthcheck": "http://localhost:8123/ping"
+    },
+    {
+      "name": "postgres",
+      "privileged": false,
+      "mounts": [{"source": "/data/postgres"}],
+      "memory_limit": 2147483648,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 5432}],
+      "healthcheck": "pg_isready -h localhost -p 5432"
+    },
+    {
+      "name": "redis",
+      "privileged": false,
+      "mounts": [{"source": "/data/redis"}],
+      "memory_limit": 1073741824,
+      "ports": [{"host_ip": "127.0.0.1", "host_port": 6379}],
+      "healthcheck": "redis-cli ping"
+    }
+  ],
+  "network": {
+    "remote_access": true,
+    "vpn_enabled": true,
+    "container_network": "bridge",
+    "open_ports": [22, 80, 443, 3002, 9090, 9093, 8081, 3100, 8123, 5432, 6379]
+  },
+  "compliance": {
+    "firewall_enabled": true,
+    "ssh_password_auth": false,
+    "audit_logging_enabled": true,
+    "intrusion_detection_active": true,
+    "file_integrity_monitoring": true,
+    "security_scanning_enabled": true
+  }
+}

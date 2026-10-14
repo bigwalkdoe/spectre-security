@@ -1,0 +1,38 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "/home/deon/dev/github/scripts",
+  "documentNamespace": "http://trivy.dev/filesystem//home/deon/dev/github/scripts-0862c85f-6f64-49f6-a640-e6b11061aa49",
+  "creationInfo": {
+    "creators": [
+      "Organization: aquasecurity",
+      "Tool: trivy-0.69.3"
+    ],
+    "created": "2026-10-14T15:11:18Z"
+  },
+  "packages": [
+    {
+      "name": "/home/deon/dev/github/scripts",
+      "SPDXID": "SPDXRef-Filesystem-fccb11d6e2423773",
+      "downloadLocation": "NONE",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE",
+      "annotations": [
+        {
+          "annotator": "Tool: trivy-0.69.3",
+          "annotationDate": "2026-10-14T15:11:18Z",
+          "annotationType": "OTHER",
+          "comment": "SchemaVersion: 2"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relatedSpdxElement": "SPDXRef-Filesystem-fccb11d6e2423773",
+      "relationshipType": "DESCRIBES"
+    }
+  ]
+}

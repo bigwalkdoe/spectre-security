@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-10-14T22:27:09+05:00",
+  "baseline_file": "/home/deon/dev/github/scripts/security/test-data/current-infrastructure.json",
+  "drift_detected": true,
+  "categories": {
+    "network": {
+      "unexpected_0.0.0.0_port_3000": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3001": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3004": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_3005": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_8000": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_18080": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      },
+      "unexpected_0.0.0.0_port_19601": {
+        "expected": "not exposed",
+        "actual": "exposed on 0.0.0.0",
+        "status": "DRIFT"
+      }
+    },
+    "compliance": {
+      "audit_logging_enabled": {
+        "expected": "true",
+        "actual": "false",
+        "status": "DRIFT"
+      },
+      "intrusion_detection_active": {
+        "expected": "true",
+        "actual": "false",
+        "status": "DRIFT"
+      }
+    }
+  }
+}

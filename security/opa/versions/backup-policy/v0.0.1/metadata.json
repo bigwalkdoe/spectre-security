@@ -1,0 +1,14 @@
+{
+  "policy": "backup-policy",
+  "version": "0.0.1",
+  "previous_version": "0.0.0",
+  "timestamp": "2026-10-15T03:43:52+05:00",
+  "commit": "f160f6dea9a2d29e020bb9b6ecb40dce3f76cdbd",
+  "message": "Backup policy with encryption, retention, off-site replication",
+  "bump_type": "patch",
+  "author": "Security Baseline",
+  "email": "security@example.com",
+  "approved": true,
+  "approved_by": "Security Baseline",
+  "approved_at": "2026-10-15T03:44:00+05:00"
+}

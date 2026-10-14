@@ -1,0 +1,95 @@
+name: Policy Approval Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'security/opa/policies/**'
+      - 'security/opa/versions/**'
+  workflow_dispatch:
+    inputs:
+      policy:
+        description: 'Policy to check (or "all")'
+        required: false
+        default: 'all'
+
+jobs:
+  policy-gate:
+    name: Policy Approval Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Policy Version Manager
+        run: |
+          chmod +x scripts/policy-version-manager.sh
+      
+      - name: Check Policy Approvals
+        id: policy-check
+        run: |
+          chmod +x scripts/policy-version-manager.sh
+          
+          if [ "${{ github.event.inputs.policy }}" = "all" ] || [ -z "${{ github.event.inputs.policy }}" ]; then
+            ./scripts/policy-version-manager.sh check-all
+          else
+            ./scripts/policy-version-manager.sh check "${{ github.event.inputs.policy }}" $(./scripts/policy-version-manager.sh list "${{ github.event.inputs.policy }}" | grep -o 'v[0-9.]*' | head -1 | sed 's/v//')
+          fi
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Read the index to get policy status
+            const indexPath = 'security/opa/versions/index.json';
+            if (!fs.existsSync(indexPath)) {
+              return;
+            }
+            
+            const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+            
+            let body = `## 🛡️ Policy Approval Gate\n\n`;
+            body += `**PR:** #${context.issue.number}\n`;
+            body += `**Commit:** ${context.sha.substring(0, 8)}\n\n`;
+            
+            let allApproved = true;
+            
+            for (const [policy, info] of Object.entries(index.policies)) {
+              const status = info.approved ? '✅' : '❌';
+              body += `- **${policy}** v${info.version}: ${status} ${info.approved ? '' : '(NOT APPROVED)'}\n`;
+              if (!info.approved) allApproved = false;
+            }
+            
+            body += `\n${allApproved ? '✅ **All policies approved**' : '❌ **Some policies NOT approved - PR cannot merge**'}\n`;
+            
+            if (!allApproved) {
+              body += `\n### How to Approve\n`;
+              body += `Run locally:\n`;
+              body += `\`\`\`bash\n./scripts/policy-version-manager.sh approve <policy> <version>\n\`\`\`\n`;
+              body += `Then commit and push the updated \`security/opa/versions/index.json\`.\n`;
+            }
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+        
+      - name: Fail if Not Approved
+        if: failure()
+        run: |
+          echo "::error::Policy approval gate failed - some policies not approved"
+          exit 1

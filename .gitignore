@@ -1,0 +1,62 @@
+# Runtime logs and artifacts
+security/logs/*.json
+security/logs/*.log
+security/logs/sbom-*/
+security/logs/aide/
+!security/logs/*.service
+!security/logs/*.timer
+
+# SBOM output directories
+security/logs/sbom-*/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# OS/Editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+.venvs/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Go
+*.exe
+*.test
+*.out
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+*.log.*

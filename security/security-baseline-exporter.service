@@ -1,0 +1,13 @@
+[Unit]
+Description=Security Baseline Prometheus Exporter
+After=network.target
+
+[Service]
+Type=oneshot
+User=deon
+WorkingDirectory=[REDACTED_PATH]/dev/github/scripts
+ExecStart=[REDACTED_PATH]/dev/github/scripts/security/security-baseline-exporter.sh
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target

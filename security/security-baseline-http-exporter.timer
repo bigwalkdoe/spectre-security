@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Security Baseline HTTP Exporter every 5 minutes
+Requires=security-baseline-http-exporter.service
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Security Baseline HTTP Exporter
+After=network.target
+
+[Service]
+Type=simple
+User=deon
+WorkingDirectory=[REDACTED_PATH]/dev/github/scripts/security
+ExecStart=/usr/bin/python3 [REDACTED_PATH]/dev/github/scripts/security/security_baseline_http_exporter.py
+Restart=always
+RestartSec=10
+Environment=PORT=9100
+
+[Install]
+WantedBy=multi-user.target

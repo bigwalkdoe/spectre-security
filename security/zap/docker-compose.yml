@@ -1,0 +1,21 @@
+services:
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: zap
+    ports:
+      - "8080:8080"
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8080
+      -config api.disablekey=true
+    restart: unless-stopped
+    networks:
+      - zap
+    volumes:
+      - zap-data:/home/zap/.ZAP
+
+volumes:
+  zap-data:
+
+networks:
+  zap:
+    driver: bridge

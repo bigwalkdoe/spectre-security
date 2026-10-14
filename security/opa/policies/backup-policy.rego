@@ -23,3 +23,4 @@ deny[msg] {
     input.last_success_age > 86400
     msg = "Last successful backup is more than 24 hours old"
 }
+# Additional test rule

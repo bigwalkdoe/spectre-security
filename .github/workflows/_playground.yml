@@ -1,0 +1,12 @@
+name: Playground
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  hi:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "hi"

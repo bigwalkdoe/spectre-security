@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BASELINE_FILE="$SCRIPT_DIR/test-data/current-infrastructure.json"
+BASELINE_FILE="${SPECTRE_BASELINE:-$SCRIPT_DIR/test-data/current-infrastructure.json}"
 LOG_DIR="$SCRIPT_DIR/logs"
 mkdir -p "$LOG_DIR"
 

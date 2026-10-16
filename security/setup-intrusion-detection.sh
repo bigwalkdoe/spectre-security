@@ -1,6 +1,13 @@
 #!/bin/bash
 # Intrusion Detection Setup - Fail2Ban, Wazuh, AIDE
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Intrusion Detection Setup ==="
 echo ""
@@ -144,8 +151,8 @@ report_url=stdout
 /etc/docker CONTENT_EX
 
 # Scripts and configurations
-[REDACTED_PATH]/scripts CONTENT_EX
-[REDACTED_PATH]/dev/github/system-maintenance CONTENT_EX
+${SPECTRE_HOME}/scripts CONTENT_EX
+${SPECTRE_HOME}/dev/github/system-maintenance CONTENT_EX
 
 # Log files (check existence only)
 /var/log PERMS
@@ -159,14 +166,14 @@ report_url=stdout
 !/media
 !/var/lib/docker
 !/var/cache
-![REDACTED_PATH]/.cache
+!${SPECTRE_HOME}/.cache
 AIDE_CONF'
 
     sudo mkdir -p /var/lib/aide /var/log/aide
     sudo aideinit 2>/dev/null || sudo aide --init 2>/dev/null || true
     
     # Create AIDE check script
-    cat > [REDACTED_PATH]/scripts/security/check-file-integrity.sh << 'AIDE_CHECK'
+    cat > ${SPECTRE_REPO}/security/check-file-integrity.sh << 'AIDE_CHECK'
 #!/bin/bash
 # AIDE File Integrity Check
 set -euo pipefail
@@ -205,7 +212,7 @@ fi
 
 echo "AIDE check completed (exit code: $AIDE_EXIT)"
 AIDE_CHECK
-    chmod +x [REDACTED_PATH]/scripts/security/check-file-integrity.sh
+    chmod +x ${SPECTRE_REPO}/security/check-file-integrity.sh
     echo "AIDE configured and initialized"
 }
 
@@ -244,8 +251,8 @@ setup_wazuh() {
   <syscheck>
     <frequency>3600</frequency>
     <scan_on_start>yes</scan_on_start>
-    <directories check_all="yes">/etc,/usr/bin,/usr/sbin,/bin,/sbin,[REDACTED_PATH]/scripts</directories>
-    <directories check_all="yes">[REDACTED_PATH]/dev/github/system-maintenance</directories>
+    <directories check_all="yes">/etc,/usr/bin,/usr/sbin,/bin,/sbin,${SPECTRE_HOME}/scripts</directories>
+    <directories check_all="yes">${SPECTRE_HOME}/dev/github/system-maintenance</directories>
     <ignore>/proc</ignore>
     <ignore>/sys</ignore>
     <ignore>/dev</ignore>
@@ -277,7 +284,7 @@ OSSEC_CONF'
     fi
 
     # Create Wazuh status check script
-    cat > [REDACTED_PATH]/scripts/security/check-wazuh-status.sh << 'WAZUH'
+    cat > ${SPECTRE_REPO}/security/check-wazuh-status.sh << 'WAZUH'
 #!/bin/bash
 # Check Wazuh agent status
 echo "=== Wazuh Agent Status ==="
@@ -291,7 +298,7 @@ echo ""
 echo "Agent logs: /var/ossec/logs/ossec.log"
 echo "Active response: /var/ossec/active-response/bin/"
 WAZUH
-    chmod +x [REDACTED_PATH]/scripts/security/check-wazuh-status.sh
+    chmod +x ${SPECTRE_REPO}/security/check-wazuh-status.sh
     echo "Wazuh agent configured (set MANAGER_IP in /var/ossec/etc/ossec.conf)"
 }
 
@@ -306,7 +313,7 @@ echo ""
 # Add AIDE check to cron
 if ! crontab -l 2>/dev/null | grep -q "check-file-integrity"; then
     (crontab -l 2>/dev/null; echo "# AIDE file integrity check - Daily at 5:00 AM") | crontab -
-    (crontab -l 2>/dev/null; echo "0 5 * * * [REDACTED_PATH]/scripts/security/check-file-integrity.sh") | crontab -
+    (crontab -l 2>/dev/null; echo "0 5 * * * ${SPECTRE_REPO}/security/check-file-integrity.sh") | crontab -
     echo "AIDE daily check scheduled (5:00 AM)"
 fi
 

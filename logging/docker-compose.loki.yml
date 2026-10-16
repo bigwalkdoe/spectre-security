@@ -22,7 +22,7 @@ services:
       - ./promtail-config.yml:/mnt/config/promtail-config.yml:Z
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - [REDACTED_PATH]/scripts/logs:[REDACTED_PATH]/scripts/logs:ro,Z
+      - ${SPECTRE_REPO}/logs:/mnt/spectre-logs:ro,Z
     command: -config.file=/mnt/config/promtail-config.yml
     restart: unless-stopped
     networks:

@@ -4,6 +4,13 @@
 # - Connection pooling (PgBouncer)
 # - Read replicas
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Database Optimization Setup ==="
 echo ""
@@ -12,7 +19,7 @@ echo ""
 setup_vacuum() {
     echo "[1/3] Setting up PostgreSQL automated vacuum/analyze..."
     
-    cat > [REDACTED_PATH]/scripts/performance/pg-vacuum.sh << 'VACUUM'
+    cat > ${SPECTRE_REPO}/performance/pg-vacuum.sh << 'VACUUM'
 #!/bin/bash
 # Automated PostgreSQL vacuum and analyze
 set -euo pipefail
@@ -64,14 +71,14 @@ LIMIT 10;" >> "$LOG_FILE" 2>&1
 echo "PostgreSQL vacuum/analyze completed: $DATE" >> "$LOG_FILE"
 logger -p user.info "PostgreSQL vacuum/analyze completed"
 VACUUM
-    chmod +x [REDACTED_PATH]/scripts/performance/pg-vacuum.sh
+    chmod +x ${SPECTRE_REPO}/performance/pg-vacuum.sh
     echo "  Vacuum script created"
 
     # Add to cron - run daily at 2:30 AM
     if ! crontab -l 2>/dev/null | grep -q "pg-vacuum"; then
         (crontab -l 2>/dev/null
          echo "# PostgreSQL vacuum/analyze - Daily at 2:30 AM"
-         echo "30 2 * * * [REDACTED_PATH]/scripts/performance/pg-vacuum.sh"
+         echo "30 2 * * * ${SPECTRE_REPO}/performance/pg-vacuum.sh"
         ) | crontab -
         echo "  Vacuum scheduled daily at 2:30 AM"
     fi
@@ -81,10 +88,10 @@ VACUUM
 setup_pgbouncer() {
     echo "[2/3] Setting up PgBouncer connection pooling..."
     
-    mkdir -p [REDACTED_PATH]/scripts/performance/pgbouncer
+    mkdir -p ${SPECTRE_REPO}/performance/pgbouncer
     
     # Create PgBouncer config
-    cat > [REDACTED_PATH]/scripts/performance/pgbouncer/pgbouncer.ini << 'PGBOUNCER'
+    cat > ${SPECTRE_REPO}/performance/pgbouncer/pgbouncer.ini << 'PGBOUNCER'
 [databases]
 guardrail = host=postgres port=5432 dbname=guardrail
 postgres = host=postgres port=5432 dbname=postgres
@@ -120,12 +127,12 @@ client_idle_timeout = 600
 PGBOUNCER
 
     # Create userlist
-    cat > [REDACTED_PATH]/scripts/performance/pgbouncer/userlist.txt << 'USERLIST'
+    cat > ${SPECTRE_REPO}/performance/pgbouncer/userlist.txt << 'USERLIST'
 "postgres" "postgres"
 USERLIST
 
     # Create Docker Compose for PgBouncer
-    cat > [REDACTED_PATH]/scripts/performance/pgbouncer/docker-compose.yml << 'PG_COMPOSE'
+    cat > ${SPECTRE_REPO}/performance/pgbouncer/docker-compose.yml << 'PG_COMPOSE'
 services:
   pgbouncer:
     image: bitnami/pgbouncer:latest
@@ -154,7 +161,7 @@ PG_COMPOSE
 setup_replicas() {
     echo "[3/3] Creating read replica setup..."
     
-    cat > [REDACTED_PATH]/scripts/performance/setup-read-replica.sh << 'REPLICA'
+    cat > ${SPECTRE_REPO}/performance/setup-read-replica.sh << 'REPLICA'
 #!/bin/bash
 # PostgreSQL Read Replica Setup
 set -euo pipefail
@@ -193,7 +200,7 @@ echo ""
 echo "Then in the replica:"
 echo "  pg_basebackup -h $PRIMARY_HOST -D /var/lib/postgresql/data -U replicator -P -v"
 REPLICA
-    chmod +x [REDACTED_PATH]/scripts/performance/setup-read-replica.sh
+    chmod +x ${SPECTRE_REPO}/performance/setup-read-replica.sh
     echo "  Read replica setup script created"
 }
 
@@ -215,4 +222,4 @@ echo ""
 echo "Next steps:"
 echo "  1. Start PgBouncer: docker-compose -f pgbouncer/docker-compose.yml up -d"
 echo "  2. Update app configs to use localhost:6432 instead of localhost:5432"
-echo "  3. For read replicas: [REDACTED_PATH]/scripts/performance/setup-read-replica.sh"
+echo "  3. For read replicas: ${SPECTRE_REPO}/performance/setup-read-replica.sh"

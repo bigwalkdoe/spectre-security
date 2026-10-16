@@ -1,6 +1,13 @@
 #!/bin/bash
 # Docker container log rotation and retention policy
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "Configuring Docker container log rotation..."
 
@@ -26,12 +33,12 @@ fi
 # System log rotation for all maintenance logs
 sudo bash -c 'cat > /etc/logrotate.d/system-maintenance << "EOF"
 /var/log/system-maintenance/*.log
-[REDACTED_PATH]/scripts/logs/*.log
+${SPECTRE_REPO}/logs/*.log
 /var/log/backup.log
 /var/log/security-hardening.log
 /var/log/maintenance.log
-[REDACTED_PATH]/.local/share/network-monitor.log
-[REDACTED_PATH]/.local/share/api-security.log
+${SPECTRE_HOME}/.local/share/network-monitor.log
+${SPECTRE_HOME}/.local/share/api-security.log
 {
     daily
     rotate 14

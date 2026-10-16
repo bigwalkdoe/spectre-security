@@ -1,6 +1,13 @@
 #!/bin/bash
 # System Performance Optimization Script
 
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 echo "Optimizing system performance..."
 
 # Enable tuned performance profile
@@ -56,9 +63,9 @@ EOF'
 
 # Create performance monitoring dashboard alerts
 echo "Setting up performance alerts..."
-mkdir -p [REDACTED_PATH]/scripts/performance
+mkdir -p ${SPECTRE_REPO}/performance
 
-cat > [REDACTED_PATH]/scripts/performance/check-performance.sh << 'EOF'
+cat > ${SPECTRE_REPO}/performance/check-performance.sh << 'EOF'
 #!/bin/bash
 # Performance monitoring script
 
@@ -87,7 +94,7 @@ fi
 echo "Performance check completed - CPU: ${CPU_USAGE}%, MEM: ${MEM_USAGE}%, DISK: ${DISK_USAGE}%"
 EOF
 
-chmod +x [REDACTED_PATH]/scripts/performance/check-performance.sh
+chmod +x ${SPECTRE_REPO}/performance/check-performance.sh
 
 # Create systemd timer for performance monitoring
 sudo bash -c 'cat > /etc/systemd/system/performance-check.service << "EOF"
@@ -96,7 +103,7 @@ Description=Performance Monitoring Service
 
 [Service]
 Type=oneshot
-ExecStart=[REDACTED_PATH]/scripts/performance/check-performance.sh
+ExecStart=${SPECTRE_REPO}/performance/check-performance.sh
 User=deon
 EOF'
 

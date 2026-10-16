@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASELINE_FILE="$SCRIPT_DIR/test-data/current-infrastructure.json"
+BASELINE_FILE="${SPECTRE_BASELINE:-$SCRIPT_DIR/test-data/current-infrastructure.json}"
 BACKUP_FILE="$SCRIPT_DIR/test-data/current-infrastructure.json.backup.$(date +%Y%m%d_%H%M%S)"
 
 echo "=== Updating Infrastructure Baseline ==="

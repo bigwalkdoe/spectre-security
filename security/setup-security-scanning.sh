@@ -4,6 +4,13 @@
 # - SonarQube for code security analysis
 # - OWASP ZAP for web application security testing
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Automated Security Scanning Setup ==="
 echo ""
@@ -21,12 +28,12 @@ setup_trivy() {
     fi
 
     # Create comprehensive scan script
-    cat > [REDACTED_PATH]/scripts/security/run-trivy-scan.sh << 'TRIVY_SCAN'
+    cat > ${SPECTRE_REPO}/security/run-trivy-scan.sh << 'TRIVY_SCAN'
 #!/bin/bash
 # Comprehensive Trivy vulnerability scan
 set -euo pipefail
 
-REPORT_DIR="[REDACTED_PATH]/scripts/security/reports"
+REPORT_DIR="${SPECTRE_REPO}/security/reports"
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$REPORT_DIR"
 
@@ -42,12 +49,12 @@ done
 
 # Scan filesystem
 echo "Scanning filesystem..."
-trivy fs --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_fs_$DATE.json" [REDACTED_PATH]/projects 2>/dev/null || true
-trivy fs --severity HIGH,CRITICAL [REDACTED_PATH]/projects 2>/dev/null | tail -20 || true
+trivy fs --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_fs_$DATE.json" ${SPECTRE_HOME}/projects 2>/dev/null || true
+trivy fs --severity HIGH,CRITICAL ${SPECTRE_HOME}/projects 2>/dev/null | tail -20 || true
 
 # Scan Git repos
 echo "Scanning Git repositories..."
-for repo in [REDACTED_PATH]/projects/*/; do
+for repo in ${SPECTRE_HOME}/projects/*/; do
     if [ -d "$repo/.git" ]; then
         echo "  Scanning: $(basename $repo)"
         trivy repo --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_repo_$(basename $repo)_$DATE.json" "$repo" 2>/dev/null || true
@@ -77,7 +84,7 @@ fi
 echo ""
 echo "Trivy scan completed: $DATE"
 TRIVY_SCAN
-    chmod +x [REDACTED_PATH]/scripts/security/run-trivy-scan.sh
+    chmod +x ${SPECTRE_REPO}/security/run-trivy-scan.sh
     echo "Trivy scan script created"
 }
 
@@ -86,8 +93,8 @@ setup_sonarqube() {
     echo "[2/3] Setting up SonarQube for code analysis..."
     
     # Create Docker Compose for SonarQube
-    mkdir -p [REDACTED_PATH]/scripts/security/sonarqube
-    cat > [REDACTED_PATH]/scripts/security/sonarqube/docker-compose.yml << 'SONAR_COMPOSE'
+    mkdir -p ${SPECTRE_REPO}/security/sonarqube
+    cat > ${SPECTRE_REPO}/security/sonarqube/docker-compose.yml << 'SONAR_COMPOSE'
 services:
   sonarqube:
     image: sonarqube:community
@@ -133,7 +140,7 @@ networks:
 SONAR_COMPOSE
 
     # Create SonarQube analysis script
-    cat > [REDACTED_PATH]/scripts/security/run-sonarqube-analysis.sh << 'SONAR_SCRIPT'
+    cat > ${SPECTRE_REPO}/security/run-sonarqube-analysis.sh << 'SONAR_SCRIPT'
 #!/bin/bash
 # Run SonarQube code analysis
 set -euo pipefail
@@ -152,7 +159,7 @@ fi
 
 echo "Running SonarQube analysis..."
 for project in example-project Modelink; do
-    PROJECT_DIR="[REDACTED_PATH]/projects/$project"
+    PROJECT_DIR="${SPECTRE_HOME}/projects/$project"
     if [ -d "$PROJECT_DIR" ]; then
         echo "Analyzing $project..."
         cd "$PROJECT_DIR"
@@ -169,7 +176,7 @@ done
 echo "SonarQube analysis completed"
 echo "View results at: $SONAR_HOST_URL"
 SONAR_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/security/run-sonarqube-analysis.sh
+    chmod +x ${SPECTRE_REPO}/security/run-sonarqube-analysis.sh
     echo "SonarQube configured (start with: docker-compose -f sonarqube/docker-compose.yml up -d)"
 }
 
@@ -178,8 +185,8 @@ setup_zap() {
     echo "[3/3] Setting up OWASP ZAP for web security testing..."
     
     # Create Docker Compose for ZAP
-    mkdir -p [REDACTED_PATH]/scripts/security/zap
-    cat > [REDACTED_PATH]/scripts/security/zap/docker-compose.yml << 'ZAP_COMPOSE'
+    mkdir -p ${SPECTRE_REPO}/security/zap
+    cat > ${SPECTRE_REPO}/security/zap/docker-compose.yml << 'ZAP_COMPOSE'
 services:
   zap:
     image: ghcr.io/zaproxy/zaproxy:stable
@@ -204,13 +211,13 @@ networks:
 ZAP_COMPOSE
 
     # Create ZAP scan script
-    cat > [REDACTED_PATH]/scripts/security/run-zap-scan.sh << 'ZAP_SCAN'
+    cat > ${SPECTRE_REPO}/security/run-zap-scan.sh << 'ZAP_SCAN'
 #!/bin/bash
 # OWASP ZAP automated security scan
 set -euo pipefail
 
 ZAP_URL="http://localhost:8080"
-REPORT_DIR="[REDACTED_PATH]/scripts/security/reports"
+REPORT_DIR="${SPECTRE_REPO}/security/reports"
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$REPORT_DIR"
 
@@ -263,7 +270,7 @@ fi
 
 echo "ZAP scan completed: $DATE"
 ZAP_SCAN
-    chmod +x [REDACTED_PATH]/scripts/security/run-zap-scan.sh
+    chmod +x ${SPECTRE_REPO}/security/run-zap-scan.sh
     echo "OWASP ZAP configured (start with: docker-compose -f zap/docker-compose.yml up -d)"
 }
 
@@ -279,8 +286,8 @@ echo ""
 if ! crontab -l 2>/dev/null | grep -q "run-trivy-scan"; then
     (crontab -l 2>/dev/null
      echo "# Automated security scanning"
-     echo "0 6 * * 0 [REDACTED_PATH]/scripts/security/run-trivy-scan.sh"
-     echo "0 7 * * 0 [REDACTED_PATH]/scripts/security/run-zap-scan.sh http://localhost:3000"
+     echo "0 6 * * 0 ${SPECTRE_REPO}/security/run-trivy-scan.sh"
+     echo "0 7 * * 0 ${SPECTRE_REPO}/security/run-zap-scan.sh http://localhost:3000"
     ) | crontab -
     echo "Weekly security scans scheduled (Sundays)"
 fi
@@ -294,8 +301,8 @@ echo "  - SonarQube (code security analysis on port 9000)"
 echo "  - OWASP ZAP (web app security testing on port 8080)"
 echo ""
 echo "Usage:"
-echo "  Trivy:   [REDACTED_PATH]/scripts/security/run-trivy-scan.sh"
+echo "  Trivy:   ${SPECTRE_REPO}/security/run-trivy-scan.sh"
 echo "  SonarQube: Start with: docker-compose -f sonarqube/docker-compose.yml up -d"
-echo "            Then run:    [REDACTED_PATH]/scripts/security/run-sonarqube-analysis.sh"
+echo "            Then run:    ${SPECTRE_REPO}/security/run-sonarqube-analysis.sh"
 echo "  ZAP:     Start with: docker-compose -f zap/docker-compose.yml up -d"
-echo "            Then run:    [REDACTED_PATH]/scripts/security/run-zap-scan.sh <target_url>"
+echo "            Then run:    ${SPECTRE_REPO}/security/run-zap-scan.sh <target_url>"

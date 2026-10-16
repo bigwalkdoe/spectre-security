@@ -2,12 +2,19 @@
 # Off-site Backup Replication Setup
 # Rsync to remote location, cloud storage (AWS S3/Backblaze B2), encryption
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Off-site Backup Replication Setup ==="
 echo ""
 
 BACKUP_DIR="/backups"
-CONFIG_FILE="[REDACTED_PATH]/.secrets/backup-config.env"
+CONFIG_FILE="${SPECTRE_HOME}/.secrets/backup-config.env"
 
 # Load config if exists
 if [ -f "$CONFIG_FILE" ]; then
@@ -30,16 +37,16 @@ setup_encryption() {
         echo "Using GPG encryption for recipient: $GPG_RECIPIENT"
     else
         # Generate encryption key if not exists
-        if [ ! -f [REDACTED_PATH]/.secrets/backup-key.gpg ]; then
+        if [ ! -f ${SPECTRE_HOME}/.secrets/backup-key.gpg ]; then
             echo "Generating backup encryption key..."
             ENCRYPTION_KEY=$(openssl rand -hex 32)
-            echo "$ENCRYPTION_KEY" | gpg --symmetric --cipher-algo AES256 -o [REDACTED_PATH]/.secrets/backup-key.gpg 2>/dev/null || {
+            echo "$ENCRYPTION_KEY" | gpg --symmetric --cipher-algo AES256 -o ${SPECTRE_HOME}/.secrets/backup-key.gpg 2>/dev/null || {
                 echo "Creating plaintext key file (use GPG for production)"
-                echo "$ENCRYPTION_KEY" > [REDACTED_PATH]/.secrets/backup-key.plain
-                chmod 600 [REDACTED_PATH]/.secrets/backup-key.plain
+                echo "$ENCRYPTION_KEY" > ${SPECTRE_HOME}/.secrets/backup-key.plain
+                chmod 600 ${SPECTRE_HOME}/.secrets/backup-key.plain
             }
         fi
-        echo "Backup encryption key at [REDACTED_PATH]/.secrets/backup-key.gpg"
+        echo "Backup encryption key at ${SPECTRE_HOME}/.secrets/backup-key.gpg"
     fi
 }
 
@@ -53,16 +60,16 @@ setup_rsync_replication() {
     fi
 
     # Create SSH key if needed
-    if [ ! -f [REDACTED_PATH]/.ssh/backup_rsync ]; then
-        ssh-keygen -t ed25519 -f [REDACTED_PATH]/.ssh/backup_rsync -N "" -C "backup-replication"
-        echo "  SSH key generated: [REDACTED_PATH]/.ssh/backup_rsync.pub"
+    if [ ! -f ${SPECTRE_HOME}/.ssh/backup_rsync ]; then
+        ssh-keygen -t ed25519 -f ${SPECTRE_HOME}/.ssh/backup_rsync -N "" -C "backup-replication"
+        echo "  SSH key generated: ${SPECTRE_HOME}/.ssh/backup_rsync.pub"
         echo "  Add this key to $REMOTE_USER@$REMOTE_HOST authorized_keys"
-        cat [REDACTED_PATH]/.ssh/backup_rsync.pub
+        cat ${SPECTRE_HOME}/.ssh/backup_rsync.pub
     fi
 
     # Create SSH config
-    mkdir -p [REDACTED_PATH]/.ssh
-    cat >> [REDACTED_PATH]/.ssh/config << SSH_CFG
+    mkdir -p ${SPECTRE_HOME}/.ssh
+    cat >> ${SPECTRE_HOME}/.ssh/config << SSH_CFG
 
 # Backup replication host
 Host backup-remote
@@ -72,10 +79,10 @@ Host backup-remote
     Compression yes
     ServerAliveInterval 60
 SSH_CFG
-    chmod 600 [REDACTED_PATH]/.ssh/config
+    chmod 600 ${SPECTRE_HOME}/.ssh/config
 
     # Create replication script
-    cat > [REDACTED_PATH]/scripts/backups/replicate-to-remote.sh << RSYNC_SCRIPT
+    cat > ${SPECTRE_REPO}/backups/replicate-to-remote.sh << RSYNC_SCRIPT
 #!/bin/bash
 # Replicate backups to remote location via rsync
 set -euo pipefail
@@ -98,7 +105,7 @@ rsync -avz --progress \
     --delete \
     --delete-excluded \
     --exclude='*.tmp' \
-    -e "ssh -i [REDACTED_PATH]/.ssh/backup_rsync -o StrictHostKeyChecking=accept-new" \
+    -e "ssh -i ${SPECTRE_HOME}/.ssh/backup_rsync -o StrictHostKeyChecking=accept-new" \
     "\$BACKUP_DIR/" \
     "\$REMOTE_USER@\$REMOTE_HOST:\$REMOTE_PATH/" >> "\$LOG_FILE" 2>&1
 
@@ -114,7 +121,7 @@ fi
 
 echo "Replication completed: \$DATE" >> "\$LOG_FILE"
 RSYNC_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/backups/replicate-to-remote.sh
+    chmod +x ${SPECTRE_REPO}/backups/replicate-to-remote.sh
     echo "  Rsync replication script created"
 }
 
@@ -128,7 +135,7 @@ setup_s3_replication() {
     fi
 
     # Create S3 replication script
-    cat > [REDACTED_PATH]/scripts/backups/replicate-to-s3.sh << S3_SCRIPT
+    cat > ${SPECTRE_REPO}/backups/replicate-to-s3.sh << S3_SCRIPT
 #!/bin/bash
 # Replicate backups to S3-compatible storage
 set -euo pipefail
@@ -139,8 +146,8 @@ LOG_FILE="/var/log/backup-s3-replication.log"
 DATE=\$(date +%Y%m%d_%H%M%S)
 
 # Load secrets
-if [ -f "[REDACTED_PATH]/.secrets/environment" ]; then
-    source "[REDACTED_PATH]/.secrets/environment"
+if [ -f "${SPECTRE_HOME}/.secrets/environment" ]; then
+    source "${SPECTRE_HOME}/.secrets/environment"
 fi
 
 echo "==========================================" >> "\$LOG_FILE"
@@ -172,7 +179,7 @@ fi
 
 echo "S3 replication completed: \$DATE" >> "\$LOG_FILE"
 S3_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/backups/replicate-to-s3.sh
+    chmod +x ${SPECTRE_REPO}/backups/replicate-to-s3.sh
     echo "  S3 replication script created for bucket: $S3_BUCKET"
 }
 
@@ -189,7 +196,7 @@ setup_b2_replication() {
         pip install b2 2>/dev/null || true
     fi
 
-    cat > [REDACTED_PATH]/scripts/backups/replicate-to-b2.sh << B2_SCRIPT
+    cat > ${SPECTRE_REPO}/backups/replicate-to-b2.sh << B2_SCRIPT
 #!/bin/bash
 # Replicate backups to Backblaze B2
 set -euo pipefail
@@ -214,7 +221,7 @@ else
     echo "B2 CLI not available" >> "\$LOG_FILE"
 fi
 B2_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/backups/replicate-to-b2.sh
+    chmod +x ${SPECTRE_REPO}/backups/replicate-to-b2.sh
     echo "  B2 replication script created for bucket: $B2_BUCKET"
 }
 
@@ -252,9 +259,9 @@ setup_cron() {
     if ! crontab -l 2>/dev/null | grep -q "replicate-to-remote"; then
         (crontab -l 2>/dev/null
          echo "# Off-site backup replication"
-         echo "30 4 * * * [REDACTED_PATH]/scripts/backups/replicate-to-remote.sh"
-         echo "0 5 * * * [REDACTED_PATH]/scripts/backups/replicate-to-s3.sh"
-         echo "0 6 * * * [REDACTED_PATH]/scripts/backups/replicate-to-b2.sh"
+         echo "30 4 * * * ${SPECTRE_REPO}/backups/replicate-to-remote.sh"
+         echo "0 5 * * * ${SPECTRE_REPO}/backups/replicate-to-s3.sh"
+         echo "0 6 * * * ${SPECTRE_REPO}/backups/replicate-to-b2.sh"
         ) | crontab -
         echo "Replication cron jobs added"
     fi
@@ -283,4 +290,4 @@ echo ""
 echo "Encryption: ${ENCRYPTION_KEY:+enabled}$([ -z \"$ENCRYPTION_KEY\" ] && echo 'configure key')"
 echo ""
 echo "Edit $CONFIG_FILE with your credentials"
-echo "Run replication manually: [REDACTED_PATH]/scripts/backups/replicate-to-remote.sh"
+echo "Run replication manually: ${SPECTRE_REPO}/backups/replicate-to-remote.sh"

@@ -1,6 +1,13 @@
 #!/bin/bash
 # Resource Monitoring & Cost Optimization
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Resource Monitoring & Cost Optimization Setup ==="
 echo ""
@@ -10,12 +17,12 @@ setup_cost_tracking() {
     echo "[1/4] Setting up cost tracking..."
     
     # Create cloud cost tracker
-    cat > [REDACTED_PATH]/scripts/performance/cloud-cost-tracker.sh << 'COST'
+    cat > ${SPECTRE_REPO}/performance/cloud-cost-tracker.sh << 'COST'
 #!/bin/bash
 # Track cloud resource costs
 set -euo pipefail
 
-REPORT_DIR="[REDACTED_PATH]/scripts/performance/reports"
+REPORT_DIR="${SPECTRE_REPO}/performance/reports"
 mkdir -p "$REPORT_DIR"
 DATE=$(date +%Y%m%d)
 
@@ -40,11 +47,11 @@ docker stats --no-stream 2>/dev/null >> "$REPORT_DIR/cost-report-$DATE.md" || tr
 # Disk usage by service
 echo "" >> "$REPORT_DIR/cost-report-$DATE.md"
 echo "## Disk Usage by Directory" >> "$REPORT_DIR/cost-report-$DATE.md"
-du -sh [REDACTED_PATH]/scripts/ [REDACTED_PATH]/projects/ /backups/ /var/log/ 2>/dev/null >> "$REPORT_DIR/cost-report-$DATE.md"
+du -sh ${SPECTRE_REPO} ${SPECTRE_HOME}/projects/ /backups/ /var/log/ 2>/dev/null >> "$REPORT_DIR/cost-report-$DATE.md"
 
 echo "Cost report: $REPORT_DIR/cost-report-$DATE.md"
 COST
-    chmod +x [REDACTED_PATH]/scripts/performance/cloud-cost-tracker.sh
+    chmod +x ${SPECTRE_REPO}/performance/cloud-cost-tracker.sh
     echo "  Cost tracking script created"
 }
 
@@ -52,7 +59,7 @@ COST
 setup_rightsizing() {
     echo "[2/4] Setting up resource rightsizing..."
     
-    cat > [REDACTED_PATH]/scripts/performance/resource-rightsizing.sh << 'RIGHTSIZE'
+    cat > ${SPECTRE_REPO}/performance/resource-rightsizing.sh << 'RIGHTSIZE'
 #!/bin/bash
 # Analyze resource usage and recommend rightsizing
 set -euo pipefail
@@ -110,7 +117,7 @@ if [ "$USED_PCT" -gt 80 ]; then
     echo "  WARNING: Disk usage above 80%, consider cleanup or expansion"
 fi
 RIGHTSIZE
-    chmod +x [REDACTED_PATH]/scripts/performance/resource-rightsizing.sh
+    chmod +x ${SPECTRE_REPO}/performance/resource-rightsizing.sh
     echo "  Resource rightsizing script created"
 }
 
@@ -118,7 +125,7 @@ RIGHTSIZE
 setup_cleanup() {
     echo "[3/4] Setting up automated cleanup..."
     
-    cat > [REDACTED_PATH]/scripts/maintenance/cleanup-unused-resources.sh << 'CLEANUP'
+    cat > ${SPECTRE_REPO}/maintenance/cleanup-unused-resources.sh << 'CLEANUP'
 #!/bin/bash
 # Automated cleanup of unused resources
 set -euo pipefail
@@ -175,14 +182,14 @@ logger -p user.info "Resource cleanup completed. Available: $TOTAL_SPACE"
 echo "Resource cleanup completed: $DATE"
 echo "Available disk: $TOTAL_SPACE"
 CLEANUP
-    chmod +x [REDACTED_PATH]/scripts/maintenance/cleanup-unused-resources.sh
+    chmod +x ${SPECTRE_REPO}/maintenance/cleanup-unused-resources.sh
     echo "  Cleanup script created"
 
     # Schedule weekly cleanup
     if ! crontab -l 2>/dev/null | grep -q "cleanup-unused-resources"; then
         (crontab -l 2>/dev/null
          echo "# Weekly resource cleanup - Sunday at 4:00 AM"
-         echo "0 4 * * 0 [REDACTED_PATH]/scripts/maintenance/cleanup-unused-resources.sh"
+         echo "0 4 * * 0 ${SPECTRE_REPO}/maintenance/cleanup-unused-resources.sh"
         ) | crontab -
         echo "  Weekly cleanup scheduled (Sunday 4:00 AM)"
     fi
@@ -193,7 +200,7 @@ setup_dashboard() {
     echo "[4/4] Setting up resource monitoring dashboard..."
     
     # Create Grafana dashboard JSON for resource monitoring
-    cat > [REDACTED_PATH]/dev/github/system-maintenance/grafana-dashboards/resource-monitoring.json << 'DASHBOARD'
+    cat > ${SPECTRE_HOME}/dev/github/system-maintenance/grafana-dashboards/resource-monitoring.json << 'DASHBOARD'
 {
   "title": "Resource Monitoring & Cost",
   "uid": "resource-monitoring",
@@ -257,8 +264,8 @@ schedule_monitoring() {
     if ! crontab -l 2>/dev/null | grep -q "cloud-cost-tracker"; then
         (crontab -l 2>/dev/null
          echo "# Resource monitoring"
-         echo "0 9 * * 1 [REDACTED_PATH]/scripts/performance/cloud-cost-tracker.sh"
-         echo "0 */4 * * * [REDACTED_PATH]/scripts/performance/resource-rightsizing.sh"
+         echo "0 9 * * 1 ${SPECTRE_REPO}/performance/cloud-cost-tracker.sh"
+         echo "0 */4 * * * ${SPECTRE_REPO}/performance/resource-rightsizing.sh"
         ) | crontab -
         echo "  Resource monitoring scheduled"
     fi
@@ -285,6 +292,6 @@ echo "  - Automated cleanup of unused resources (weekly)"
 echo "  - Grafana dashboard for resource monitoring"
 echo ""
 echo "Scripts:"
-echo "  - [REDACTED_PATH]/scripts/performance/cloud-cost-tracker.sh"
-echo "  - [REDACTED_PATH]/scripts/performance/resource-rightsizing.sh"
-echo "  - [REDACTED_PATH]/scripts/maintenance/cleanup-unused-resources.sh"
+echo "  - ${SPECTRE_REPO}/performance/cloud-cost-tracker.sh"
+echo "  - ${SPECTRE_REPO}/performance/resource-rightsizing.sh"
+echo "  - ${SPECTRE_REPO}/maintenance/cleanup-unused-resources.sh"

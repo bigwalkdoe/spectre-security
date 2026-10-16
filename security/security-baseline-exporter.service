@@ -4,9 +4,11 @@ After=network.target
 
 [Service]
 Type=oneshot
-User=deon
-WorkingDirectory=[REDACTED_PATH]/dev/github/scripts
-ExecStart=[REDACTED_PATH]/dev/github/scripts/security/security-baseline-exporter.sh
+# Replace with the account that owns the checkout before installing.
+User=__DEPLOY_USER__
+# %h expands to that account's home directory. Adjust if you cloned elsewhere.
+WorkingDirectory=%h/dev/github/spectre-security
+ExecStart=%h/dev/github/spectre-security/security/security-baseline-exporter.sh
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 
 [Install]

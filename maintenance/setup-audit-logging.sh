@@ -1,6 +1,13 @@
 #!/bin/bash
 # Centralized Audit Logging Setup
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Centralized Audit Logging Setup ==="
 echo ""
@@ -37,10 +44,10 @@ setup_auditd() {
 -w /etc/docker/ -p wa -k docker_changes
 
 # Monitor scripts
--w [REDACTED_PATH]/scripts/ -p wa -k script_changes
+-w ${SPECTRE_REPO} -p wa -k script_changes
 
 # Monitor system maintenance repo
--w [REDACTED_PATH]/dev/github/system-maintenance/ -p wa -k repo_changes
+-w ${SPECTRE_HOME}/dev/github/system-maintenance/ -p wa -k repo_changes
 
 # Monitor system binaries
 -w /usr/local/bin/ -p wa -k bin_changes
@@ -66,7 +73,7 @@ AUDIT_RULES'
 setup_audit_trail() {
     echo "[2/4] Creating centralized audit trail..."
     
-    cat > [REDACTED_PATH]/scripts/maintenance/audit-trail.sh << 'AUDIT_TRAIL'
+    cat > ${SPECTRE_REPO}/maintenance/audit-trail.sh << 'AUDIT_TRAIL'
 #!/bin/bash
 # Centralized Audit Trail Generator
 set -euo pipefail
@@ -121,7 +128,7 @@ echo "==========================================" >> "$AUDIT_LOG"
 logger -p user.info "Audit trail generated: $DATE"
 echo "Audit trail written to $AUDIT_LOG"
 AUDIT_TRAIL
-    chmod +x [REDACTED_PATH]/scripts/maintenance/audit-trail.sh
+    chmod +x ${SPECTRE_REPO}/maintenance/audit-trail.sh
     echo "  Audit trail script created"
 }
 
@@ -129,12 +136,12 @@ AUDIT_TRAIL
 setup_compliance_reports() {
     echo "[3/4] Creating compliance report generator..."
     
-    cat > [REDACTED_PATH]/scripts/maintenance/compliance-report.sh << 'COMPLIANCE'
+    cat > ${SPECTRE_REPO}/maintenance/compliance-report.sh << 'COMPLIANCE'
 #!/bin/bash
 # Regular compliance report generator
 set -euo pipefail
 
-REPORT_DIR="[REDACTED_PATH]/scripts/maintenance/reports"
+REPORT_DIR="${SPECTRE_REPO}/maintenance/reports"
 mkdir -p "$REPORT_DIR"
 DATE=$(date +%Y%m%d)
 
@@ -184,7 +191,7 @@ echo "Report generated: $(date)" >> "$REPORT_DIR/compliance-$DATE.md"
 
 echo "Compliance report: $REPORT_DIR/compliance-$DATE.md"
 COMPLIANCE
-    chmod +x [REDACTED_PATH]/scripts/maintenance/compliance-report.sh
+    chmod +x ${SPECTRE_REPO}/maintenance/compliance-report.sh
     echo "  Compliance report script created"
 }
 
@@ -204,7 +211,7 @@ SUDO_AUDIT'
     echo "  Sudo command logging configured"
 
     # Create access review script
-    cat > [REDACTED_PATH]/scripts/maintenance/review-access.sh << 'ACCESS'
+    cat > ${SPECTRE_REPO}/maintenance/review-access.sh << 'ACCESS'
 #!/bin/bash
 # Review user access and activity
 set -euo pipefail
@@ -235,7 +242,7 @@ echo ""
 echo "Failed SSH attempts (last 50):"
 sudo journalctl -u sshd --since "7 days ago" 2>/dev/null | grep "Failed password" | tail -50 || echo "No failed attempts recorded"
 ACCESS
-    chmod +x [REDACTED_PATH]/scripts/maintenance/review-access.sh
+    chmod +x ${SPECTRE_REPO}/maintenance/review-access.sh
     echo "  Access review script created"
 }
 
@@ -247,9 +254,9 @@ schedule_audit() {
     if ! crontab -l 2>/dev/null | grep -q "audit-trail"; then
         (crontab -l 2>/dev/null
          echo "# Audit logging"
-         echo "0 */6 * * * [REDACTED_PATH]/scripts/maintenance/audit-trail.sh"
-         echo "0 8 * * 1 [REDACTED_PATH]/scripts/maintenance/compliance-report.sh"
-         echo "0 9 * * 1 [REDACTED_PATH]/scripts/maintenance/review-access.sh"
+         echo "0 */6 * * * ${SPECTRE_REPO}/maintenance/audit-trail.sh"
+         echo "0 8 * * 1 ${SPECTRE_REPO}/maintenance/compliance-report.sh"
+         echo "0 9 * * 1 ${SPECTRE_REPO}/maintenance/review-access.sh"
         ) | crontab -
         echo "  Audit tasks scheduled"
     fi
@@ -279,5 +286,5 @@ echo ""
 echo "Log locations:"
 echo "  - Audit trail: /var/log/audit/audit-trail.log"
 echo "  - Sudo commands: /var/log/sudo.log"
-echo "  - Compliance: [REDACTED_PATH]/scripts/maintenance/reports/"
-echo "  - Access review: run [REDACTED_PATH]/scripts/maintenance/review-access.sh"
+echo "  - Compliance: ${SPECTRE_REPO}/maintenance/reports/"
+echo "  - Access review: run ${SPECTRE_REPO}/maintenance/review-access.sh"

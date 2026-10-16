@@ -1,12 +1,19 @@
 #!/bin/bash
 # Secrets Management - HashiCorp Vault / Env-based secret injection
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Secrets Management Setup ==="
 
 VAULT_MODE="${1:-env}"  # 'env' or 'vault'
-SECRETS_DIR="[REDACTED_PATH]/.secrets"
-ENV_FILE="[REDACTED_PATH]/.secrets/environment"
+SECRETS_DIR="${SPECTRE_HOME}/.secrets"
+ENV_FILE="${SPECTRE_HOME}/.secrets/environment"
 
 mkdir -p "$SECRETS_DIR"
 chmod 700 "$SECRETS_DIR"
@@ -18,7 +25,7 @@ setup_env_secrets() {
     if [ ! -f "$ENV_FILE" ]; then
         cat > "$ENV_FILE" << 'ENV_TEMPLATE'
 # Environment-specific secrets
-# Source this file before running services: source [REDACTED_PATH]/.secrets/environment
+# Source this file before running services: source ${SPECTRE_HOME}/.secrets/environment
 # IMPORTANT: Replace placeholder values with real secrets
 
 # Database
@@ -65,12 +72,12 @@ ENV_TEMPLATE
     fi
 
     # Create a secure injection script
-    cat > [REDACTED_PATH]/scripts/security/inject-secrets.sh << 'INJECT_SCRIPT'
+    cat > ${SPECTRE_REPO}/security/inject-secrets.sh << 'INJECT_SCRIPT'
 #!/bin/bash
 # Inject secrets into environment and configuration files
 set -euo pipefail
 
-SECRETS_FILE="[REDACTED_PATH]/.secrets/environment"
+SECRETS_FILE="${SPECTRE_HOME}/.secrets/environment"
 if [ -f "$SECRETS_FILE" ]; then
     source "$SECRETS_FILE"
     echo "Secrets loaded from $SECRETS_FILE"
@@ -92,11 +99,11 @@ inject_env_file() {
 
 # Inject secrets into project .env files
 for project in example-project Modelink; do
-    inject_env_file "[REDACTED_PATH]/projects/$project/.env" 2>/dev/null || true
+    inject_env_file "${SPECTRE_HOME}/projects/$project/.env" 2>/dev/null || true
 done
 
 # Update docker-compose files with secrets
-for compose_file in [REDACTED_PATH]/projects/example-project/dk-compose.yml [REDACTED_PATH]/dev/github/system-maintenance/docker-compose.monitoring.yml; do
+for compose_file in ${SPECTRE_HOME}/projects/example-project/dk-compose.yml ${SPECTRE_HOME}/dev/github/system-maintenance/docker-compose.monitoring.yml; do
     if [ -f "$compose_file" ]; then
         echo "Processing $compose_file for secrets injection..."
     fi
@@ -104,7 +111,7 @@ done
 
 echo "Secret injection completed"
 INJECT_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/security/inject-secrets.sh
+    chmod +x ${SPECTRE_REPO}/security/inject-secrets.sh
     echo "Created secret injection script"
 }
 
@@ -156,7 +163,7 @@ WantedBy=multi-user.target
 SYSTEMD'
     
     # Create Vault secrets script
-    cat > [REDACTED_PATH]/scripts/security/vault-secrets.sh << 'VAULT_SCRIPT'
+    cat > ${SPECTRE_REPO}/security/vault-secrets.sh << 'VAULT_SCRIPT'
 #!/bin/bash
 # Vault-based secret management
 set -euo pipefail
@@ -203,12 +210,12 @@ case "${1:-}" in
         ;;
 esac
 VAULT_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/security/vault-secrets.sh
+    chmod +x ${SPECTRE_REPO}/security/vault-secrets.sh
     echo "Vault configured. Start with: sudo systemctl start vault"
 }
 
 # Also create .gitignore for secrets
-cat > [REDACTED_PATH]/.secrets/.gitignore << 'GI'
+cat > ${SPECTRE_HOME}/.secrets/.gitignore << 'GI'
 *
 !.gitignore
 GI
@@ -230,14 +237,14 @@ echo ""
 echo "=== Secrets Management Setup Complete ==="
 echo ""
 echo "Files created:"
-echo "  - [REDACTED_PATH]/.secrets/environment (env-based secrets, chmod 600)"
-echo "  - [REDACTED_PATH]/scripts/security/inject-secrets.sh (env injection)"
+echo "  - ${SPECTRE_HOME}/.secrets/environment (env-based secrets, chmod 600)"
+echo "  - ${SPECTRE_REPO}/security/inject-secrets.sh (env injection)"
 if [ "$VAULT_MODE" = "vault" ] || [ "$VAULT_MODE" = "both" ]; then
     echo "  - /etc/vault/config.hcl (Vault config)"
-    echo "  - [REDACTED_PATH]/scripts/security/vault-secrets.sh (Vault CLI)"
+    echo "  - ${SPECTRE_REPO}/security/vault-secrets.sh (Vault CLI)"
 fi
 echo ""
 echo "Next steps:"
-echo "  1. Edit [REDACTED_PATH]/.secrets/environment with real secrets"
-echo "  2. Source secrets: source [REDACTED_PATH]/.secrets/environment"
+echo "  1. Edit ${SPECTRE_HOME}/.secrets/environment with real secrets"
+echo "  2. Source secrets: source ${SPECTRE_HOME}/.secrets/environment"
 echo "  3. Run inject-secrets.sh to apply to project files"

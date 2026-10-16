@@ -1,11 +1,18 @@
 #!/bin/bash
 # Open Policy Agent (OPA) for policy-as-code
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== Open Policy Agent Setup ==="
 echo ""
 
-OPA_DIR="[REDACTED_PATH]/scripts/security/opa"
+OPA_DIR="${SPECTRE_REPO}/security/opa"
 mkdir -p "$OPA_DIR/policies"
 
 setup_opa() {
@@ -283,7 +290,7 @@ create_kubernetes_admission
 if ! crontab -l 2>/dev/null | grep -q "evaluate-policies"; then
     (crontab -l 2>/dev/null
      echo "# OPA policy evaluation - Weekly"
-     echo "0 10 * * 1 [REDACTED_PATH]/scripts/security/opa/evaluate-policies.sh"
+     echo "0 10 * * 1 ${SPECTRE_REPO}/security/opa/evaluate-policies.sh"
     ) | crontab -
     echo "Weekly policy evaluation scheduled"
 fi

@@ -1,6 +1,13 @@
 #!/bin/bash
 # Replicate backups to remote location via rsync
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 REMOTE_HOST="165.227.87.180"
 REMOTE_USER="root"
@@ -24,7 +31,7 @@ mkdir -p "$LOG_DIR"
         --delete \
         --delete-excluded \
         --exclude='*.tmp' \
-        -e "ssh -i [REDACTED_PATH]/.ssh/backup_rsync -o StrictHostKeyChecking=accept-new" \
+        -e "ssh -i ${SPECTRE_HOME}/.ssh/backup_rsync -o StrictHostKeyChecking=accept-new" \
         "$BACKUP_DIR/" \
         "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
 

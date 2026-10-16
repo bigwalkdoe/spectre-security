@@ -1,6 +1,13 @@
 #!/bin/bash
 # WireGuard VPN Setup for secure remote access
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "=== WireGuard VPN Setup ==="
 
@@ -65,7 +72,7 @@ WG_CONF
     echo "Server public key: $SERVER_PUB"
 
     # Create client config generator
-    cat > [REDACTED_PATH]/scripts/network/add-vpn-client.sh << CLIENT_SCRIPT
+    cat > ${SPECTRE_REPO}/network/add-vpn-client.sh << CLIENT_SCRIPT
 #!/bin/bash
 set -euo pipefail
 
@@ -114,7 +121,7 @@ sudo wg addconf \$WG_INTERFACE <(wg-quick strip \$WG_INTERFACE) 2>/dev/null || t
 echo "Add client \$CLIENT_NAME with IP \$CLIENT_IP"
 echo "Public key: \$CLIENT_PUB"
 CLIENT_SCRIPT
-    chmod +x [REDACTED_PATH]/scripts/network/add-vpn-client.sh
+    chmod +x ${SPECTRE_REPO}/network/add-vpn-client.sh
     echo "Client management script created"
 }
 
@@ -192,7 +199,7 @@ SYSCTL'
     sudo sysctl -p
     
     # Create DDoS mitigation script
-    cat > [REDACTED_PATH]/scripts/network/ddos-mitigation.sh << 'DDoS'
+    cat > ${SPECTRE_REPO}/network/ddos-mitigation.sh << 'DDoS'
 #!/bin/bash
 # DDoS Mitigation Script
 set -euo pipefail
@@ -232,7 +239,7 @@ sudo iptables -A INPUT -p tcp --dport 443 -m connlimit --connlimit-above 50 -j R
 
 echo "DDoS mitigation check completed"
 DDoS
-    chmod +x [REDACTED_PATH]/scripts/network/ddos-mitigation.sh
+    chmod +x ${SPECTRE_REPO}/network/ddos-mitigation.sh
     echo "DDoS protection configured"
 }
 
@@ -260,11 +267,11 @@ echo "  sudo systemctl start wg-quick@$WG_INTERFACE"
 echo "  sudo systemctl enable wg-quick@$WG_INTERFACE"
 echo ""
 echo "To add clients:"
-echo "  [REDACTED_PATH]/scripts/network/add-vpn-client.sh <client_name> [client_ip]"
+echo "  ${SPECTRE_REPO}/network/add-vpn-client.sh <client_name> [client_ip]"
 echo ""
 echo "Network segments:"
 echo "  - internal-net (172.20.0.0/16) - isolated internal traffic"
 echo "  - dmz-net (172.21.0.0/16) - DMZ services"
 echo ""
 echo "DDoS protection enabled via sysctl and iptables"
-echo "Monitor: [REDACTED_PATH]/scripts/network/ddos-mitigation.sh"
+echo "Monitor: ${SPECTRE_REPO}/network/ddos-mitigation.sh"

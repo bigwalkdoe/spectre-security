@@ -1,10 +1,17 @@
 #!/bin/bash
 # Docker Container Security Hardening
 
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 echo "Hardening Docker container security..."
 
 # Create Docker security scan script
-cat > [REDACTED_PATH]/scripts/security/scan-docker-images.sh << 'EOF'
+cat > ${SPECTRE_REPO}/security/scan-docker-images.sh << 'EOF'
 #!/bin/bash
 # Docker Image Vulnerability Scanner
 
@@ -31,11 +38,11 @@ done
 echo "Docker image scanning completed!"
 EOF
 
-chmod +x [REDACTED_PATH]/scripts/security/scan-docker-images.sh
+chmod +x ${SPECTRE_REPO}/security/scan-docker-images.sh
 
 # Run Docker image scanning
 echo "Running Docker image vulnerability scan..."
-[REDACTED_PATH]/scripts/security/scan-docker-images.sh
+${SPECTRE_REPO}/security/scan-docker-images.sh
 
 # Set up Docker security policies
 echo "Setting up Docker security policies..."

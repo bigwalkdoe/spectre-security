@@ -1,8 +1,15 @@
 #!/bin/bash
 # Comprehensive Trivy vulnerability scan
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
-REPORT_DIR="[REDACTED_PATH]/scripts/security/reports"
+REPORT_DIR="${SPECTRE_REPO}/security/reports"
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$REPORT_DIR"
 
@@ -18,12 +25,12 @@ done
 
 # Scan filesystem
 echo "Scanning filesystem..."
-trivy fs --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_fs_$DATE.json" [REDACTED_PATH]/projects 2>/dev/null || true
-trivy fs --severity HIGH,CRITICAL [REDACTED_PATH]/projects 2>/dev/null | tail -20 || true
+trivy fs --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_fs_$DATE.json" ${SPECTRE_HOME}/projects 2>/dev/null || true
+trivy fs --severity HIGH,CRITICAL ${SPECTRE_HOME}/projects 2>/dev/null | tail -20 || true
 
 # Scan Git repos
 echo "Scanning Git repositories..."
-for repo in [REDACTED_PATH]/projects/*/; do
+for repo in ${SPECTRE_HOME}/projects/*/; do
     if [ -d "$repo/.git" ]; then
         echo "  Scanning: $(basename $repo)"
         trivy repo --severity HIGH,CRITICAL --format json -o "$REPORT_DIR/trivy_repo_$(basename $repo)_$DATE.json" "$repo" 2>/dev/null || true

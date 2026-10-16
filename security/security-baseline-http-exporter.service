@@ -4,9 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=deon
-WorkingDirectory=[REDACTED_PATH]/dev/github/scripts/security
-ExecStart=/usr/bin/python3 [REDACTED_PATH]/dev/github/scripts/security/security_baseline_http_exporter.py
+# Replace with the account that owns the checkout before installing.
+User=__DEPLOY_USER__
+# %h expands to that account's home directory. Adjust if you cloned elsewhere.
+WorkingDirectory=%h/dev/github/spectre-security/security
+ExecStart=/usr/bin/python3 %h/dev/github/spectre-security/security/security_baseline_http_exporter.py
 Restart=always
 RestartSec=10
 Environment=PORT=9100

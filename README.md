@@ -190,6 +190,36 @@ export SECURITY_EMAIL_TO="security@example.com"
 - AIDE (`dnf install aide` / `apt install aide`)
 - jq, curl, systemd
 
+## Configuration
+
+Runtime paths resolve to the invoking user's home (even under `sudo`/`setuid`), and
+can be relocated without editing scripts:
+
+| Variable | Default | Used for |
+|----------|---------|----------|
+| `SPECTRE_HOME` | home of `$SUDO_USER` (or `$USER`) | `.secrets/`, `.ssh/`, `projects/` |
+| `SPECTRE_REPO` | detected via `git rev-parse --show-toplevel` | repository-root references in cron entries, setup scripts |
+| `SPECTRE_BASELINE` | `security/test-data/current-infrastructure.json` | drift-detection / update-baseline input |
+| `LOG_DIR`, `SPECTRE_HOME`-based vars | see per-script defaults | logs and reports |
+
+Example:
+
+```bash
+SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security ./run-security-hardening.sh
+```
+
+## Generated artifacts
+
+Scan reports, drift reports, SBOMs, cost reports, compliance reports, and AIDE
+databases are produced on the host running the tooling and are gitignored
+(`security/logs/`, `security/reports/`, `performance/reports/`, `maintenance/reports/`,
+`security/aide/*.db.gz`, `security/aide/aide.conf`).
+
+The real infrastructure baseline (`security/test-data/current-infrastructure.json`) is
+also gitignored, since it describes your host. Ship a sanitized example instead
+(`current-infrastructure.example.json`) and generate the real one with
+`./security/update-baseline.sh`. Drift detection honours `$SPECTRE_BASELINE`.
+
 ## Adding New Policies
 
 1. Create `.rego` file in `security/opa/policies/`

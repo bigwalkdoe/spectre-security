@@ -2,6 +2,13 @@
 # Main Maintenance Orchestration Script
 # Runs all maintenance tasks and generates reports
 
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 MAINTENANCE_LOG="/var/log/maintenance.log"
 DATE=$(date +%Y%m%d_%H%M%S)
 
@@ -10,21 +17,21 @@ echo "Starting System Maintenance: $DATE" >> "$MAINTENANCE_LOG"
 echo "==========================================" >> "$MAINTENANCE_LOG"
 
 # Make scripts executable
-chmod +x [REDACTED_PATH]/scripts/maintenance/*.sh
+chmod +x ${SPECTRE_REPO}/maintenance/*.sh
 
 # Run system cleanup
 echo "Running system cleanup..." >> "$MAINTENANCE_LOG"
-[REDACTED_PATH]/scripts/maintenance/cleanup-system.sh >> "$MAINTENANCE_LOG" 2>&1
+${SPECTRE_REPO}/maintenance/cleanup-system.sh >> "$MAINTENANCE_LOG" 2>&1
 CLEANUP_STATUS=$?
 
 # Run log cleanup
 echo "Running log cleanup..." >> "$MAINTENANCE_LOG"
-sudo [REDACTED_PATH]/scripts/maintenance/cleanup-logs.sh >> "$MAINTENANCE_LOG" 2>&1
+sudo ${SPECTRE_REPO}/maintenance/cleanup-logs.sh >> "$MAINTENANCE_LOG" 2>&1
 LOG_STATUS=$?
 
 # Run health check
 echo "Running system health check..." >> "$MAINTENANCE_LOG"
-[REDACTED_PATH]/scripts/maintenance/system-health-check.sh >> "$MAINTENANCE_LOG" 2>&1
+${SPECTRE_REPO}/maintenance/system-health-check.sh >> "$MAINTENANCE_LOG" 2>&1
 HEALTH_STATUS=$?
 
 # Generate summary

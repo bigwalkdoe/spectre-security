@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "Sanitized EXAMPLE baseline for Spectre Security.",
+    "This file describes a fictional host. The real baseline describes your actual",
+    "infrastructure (container names, port bindings, bind-mount sources, firewall",
+    "state) and is deliberately NOT tracked - see .gitignore.",
+    "Generate your own with: ./security/update-baseline.sh",
+    "Point drift detection at it with: SPECTRE_BASELINE=/path/to/baseline.json ./security/drift-detection.sh"
+  ],
+  "docker": [
+    {
+      "name": "example-service",
+      "image": "example/service:latest",
+      "privileged": false,
+      "memory_limit": 268435456,
+      "healthcheck": "CMD-SHELL wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1",
+      "ports": [
+        {
+          "host_ip": "127.0.0.1",
+          "host_port": 8000,
+          "container_port": 8000
+        }
+      ],
+      "mounts": [
+        {
+          "source": "/srv/example/data",
+          "destination": "/app/data",
+          "type": "bind"
+        }
+      ]
+    }
+  ],
+  "network": {
+    "open_ports": [8000]
+  },
+  "compliance": {
+    "firewall_enabled": true,
+    "ssh_password_auth": false,
+    "audit_logging_enabled": true,
+    "intrusion_detection_active": true,
+    "file_integrity_monitoring": true
+  },
+  "updated": 0,
+  "updated_iso": "1970-01-01T00:00:00Z"
+}

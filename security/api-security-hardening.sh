@@ -1,10 +1,17 @@
 #!/bin/bash
 # API Security Hardening Script
 
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 echo "Hardening API security configurations..."
 
 # Check example-project API configuration
-GUARDRAIL_DIR="[REDACTED_PATH]/projects/example-project"
+GUARDRAIL_DIR="${SPECTRE_HOME}/projects/example-project"
 
 if [ -d "$GUARDRAIL_DIR" ]; then
     echo "Configuring API security for example-project..."
@@ -35,7 +42,7 @@ EOF
 fi
 
 # Create API rate limiting configuration for Docker services
-cat > [REDACTED_PATH]/scripts/security/setup-rate-limiting.sh << 'EOF'
+cat > ${SPECTRE_REPO}/security/setup-rate-limiting.sh << 'EOF'
 #!/bin/bash
 # Setup API Rate Limiting with Docker
 
@@ -62,19 +69,19 @@ fi
 echo "API rate limiting setup completed!"
 EOF
 
-chmod +x [REDACTED_PATH]/scripts/security/setup-rate-limiting.sh
+chmod +x ${SPECTRE_REPO}/security/setup-rate-limiting.sh
 
 # Run rate limiting setup
-[REDACTED_PATH]/scripts/security/setup-rate-limiting.sh
+${SPECTRE_REPO}/security/setup-rate-limiting.sh
 
 # Create API monitoring script
-cat > [REDACTED_PATH]/scripts/security/monitor-api-security.sh << 'EOF'
+cat > ${SPECTRE_REPO}/security/monitor-api-security.sh << 'EOF'
 #!/bin/bash
 # API Security Monitoring Script
 
-SECURITY_LOG="[REDACTED_PATH]/.local/share/api-security.log"
+SECURITY_LOG="${SPECTRE_HOME}/.local/share/api-security.log"
 DATE=$(date +%Y%m%d_%H%M%S)
-mkdir -p [REDACTED_PATH]/.local/share
+mkdir -p ${SPECTRE_HOME}/.local/share
 
 echo "==========================================" >> "$SECURITY_LOG"
 echo "API Security Monitor - $DATE" >> "$SECURITY_LOG"
@@ -95,7 +102,7 @@ sudo fail2ban-client status nginx-limit 2>/dev/null || echo "nginx-limit jail no
 echo "API security monitoring completed: $DATE" >> "$SECURITY_LOG"
 EOF
 
-chmod +x [REDACTED_PATH]/scripts/security/monitor-api-security.sh
+chmod +x ${SPECTRE_REPO}/security/monitor-api-security.sh
 
 echo "API security hardening completed!"
 logger -p user.info "API security hardening completed"

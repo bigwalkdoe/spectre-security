@@ -1,6 +1,13 @@
 #!/bin/bash
 # Replicate backups to S3-compatible storage
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 S3_BUCKET="modelink-S3"
 BACKUP_DIR="/backups"
@@ -12,11 +19,11 @@ DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$LOG_DIR"
 
 # Load secrets
-if [ -f "[REDACTED_PATH]/.secrets/environment" ]; then
-    source "[REDACTED_PATH]/.secrets/environment"
+if [ -f "${SPECTRE_HOME}/.secrets/environment" ]; then
+    source "${SPECTRE_HOME}/.secrets/environment"
 fi
-if [ -f "[REDACTED_PATH]/.secrets/backup-config.env" ]; then
-    source "[REDACTED_PATH]/.secrets/backup-config.env"
+if [ -f "${SPECTRE_HOME}/.secrets/backup-config.env" ]; then
+    source "${SPECTRE_HOME}/.secrets/backup-config.env"
 fi
 
 {

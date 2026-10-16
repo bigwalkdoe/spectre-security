@@ -2,6 +2,13 @@
 # Configuration Backup Script
 # Backs up system and application configurations
 
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 BACKUP_DIR="/backups/configurations"
 DATE=$(date +%Y%m%d_%H%M%S)
 RETENTION_DAYS=30
@@ -37,7 +44,7 @@ sudo cp /etc/dnf/dnf5-automatic.conf "$BACKUP_DIR/dnf-automatic_$DATE" 2>/dev/nu
 
 # Project configurations
 echo "Backing up project configurations..."
-tar czf "$BACKUP_DIR/projects_config_$DATE.tar.gz" -C [REDACTED_PATH]/projects example-project/dk-compose.yml example-project/.env 2>/dev/null || true
+tar czf "$BACKUP_DIR/projects_config_$DATE.tar.gz" -C ${SPECTRE_HOME}/projects example-project/dk-compose.yml example-project/.env 2>/dev/null || true
 
 # Cleanup old backups
 echo "Cleaning up old configuration backups (older than $RETENTION_DAYS days)..."

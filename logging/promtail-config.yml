@@ -37,7 +37,7 @@ scrape_configs:
         labels:
           job: app-logs
           host: ${HOSTNAME:-localhost}
-          __path__: [REDACTED_PATH]/scripts/logs/**/*.log
+          __path__: /mnt/spectre-logs/**/*.log
 
   # Journal logs
   - job_name: journal

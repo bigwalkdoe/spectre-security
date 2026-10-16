@@ -1,6 +1,13 @@
 #!/bin/bash
 # Master setup script for all system maintenance enhancements
 set -euo pipefail
+# Resolve the invoking user's home and this repository's root. Under sudo,
+# $HOME is /root, so fall back to $SUDO_USER before trusting it. Both may be
+# overridden: SPECTRE_HOME=/srv/secure SPECTRE_REPO=/opt/spectre-security
+_spectre_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SPECTRE_HOME="${SPECTRE_HOME:-$(getent passwd "${SUDO_USER:-$USER}" 2>/dev/null | cut -d: -f6)}"
+SPECTRE_HOME="${SPECTRE_HOME:-$HOME}"
+SPECTRE_REPO="${SPECTRE_REPO:-$(git -C "$_spectre_here" rev-parse --show-toplevel 2>/dev/null || echo "$_spectre_here")}"
 
 echo "================================================================="
 echo "  System Maintenance - Complete Enhancement Suite"
@@ -153,8 +160,8 @@ echo "  Enhancements deployed!"
 echo "================================================================="
 echo ""
 echo "Quick reference:"
-echo "  - Setup guide:  [REDACTED_PATH]/dev/github/system-maintenance/install.sh"
-echo "  - DR docs:      [REDACTED_PATH]/dev/github/system-maintenance/docs/DISASTER_RECOVERY.md"
-echo "  - Runbooks:     [REDACTED_PATH]/dev/github/system-maintenance/docs/RUNBOOKS.md"
+echo "  - Setup guide:  ${SPECTRE_HOME}/dev/github/system-maintenance/install.sh"
+echo "  - DR docs:      ${SPECTRE_HOME}/dev/github/system-maintenance/docs/DISASTER_RECOVERY.md"
+echo "  - Runbooks:     ${SPECTRE_HOME}/dev/github/system-maintenance/docs/RUNBOOKS.md"
 echo "  - Monitoring:   docker-compose -f docker-compose.monitoring.yml up -d"
 echo "  - Logging:      docker-compose -f logging/docker-compose.loki.yml up -d"

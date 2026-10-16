@@ -1,8 +1,8 @@
-# Security Baseline Operations Runbook
+# Spectre Security Operations Runbook
 
 ## Overview
 
-This runbook covers daily operations, incident response, and maintenance procedures for the security baseline system.
+This runbook covers daily operations, incident response, and maintenance procedures for the Spectre Security system.
 
 ## System Architecture
 
@@ -58,9 +58,9 @@ gh run rerun <RUN_ID>
 
 ```bash
 # Check for new vulnerability findings
-# Go to: https://github.com/bigwalkdoe/scripts/security/code-scanning
+# Go to: https://github.com/bigwalkdoe/spectre-security/security/code-scanning
 # Or via CLI:
-gh api repos/bigwalkdoe/scripts/code-scanning/alerts --paginate
+gh api repos/bigwalkdoe/spectre-security/code-scanning/alerts --paginate
 ```
 
 ---
@@ -96,10 +96,10 @@ cat security/logs/drift-report-latest.json | jq '.categories'
 # 5. If authorized → Update baseline
 ./security/update-baseline.sh
 
-# 5. Verify remediation
+# 6. Verify remediation
 ./security/drift-detection.sh
 
-# 6. Close GitHub issue (auto-closes if no drift)
+# 7. Close GitHub issue (auto-closes if no drift)
 ```
 
 ### Drift Categories & Response
@@ -146,7 +146,7 @@ git push origin --force --all
 trivy image --ignore-unfixed --severity HIGH,CRITICAL <image>
 # 3. Update base image / dependencies
 # 4. Rebuild and redeploy
-# 4. Re-scan to verify
+# 5. Re-scan to verify
 ```
 
 ---
@@ -189,7 +189,7 @@ opa test -v security/opa/policies/
 ./security/alerting.sh info "Monthly test" "Test notification"
 
 # 5. Review GitHub Actions usage
-gh api repos/bigwalkdoe/scripts/actions/runs --paginate | jq '.workflow_runs | length'
+gh api repos/bigwalkdoe/spectre-security/actions/runs --paginate | jq '.workflow_runs | length'
 ```
 
 ### Quarterly
@@ -271,11 +271,11 @@ gitleaks detect --source . --no-banner --verbose --config .gitleaks.toml
 
 ## Useful Links
 
-- [GitHub Actions](https://github.com/bigwalkdoe/scripts/actions)
-- [Security Tab](https://github.com/bigwalkdoe/scripts/security)
-- [Drift Issues](https://github.com/bigwalkdoe/scripts/issues?q=label%3Adrift-detection)
-- [Dependabot Alerts](https://github.com/bigwalkdoe/scripts/security/dependabot)
-- [Code Scanning Alerts](https://github.com/bigwalkdoe/scripts/security/code-scanning)
+- [GitHub Actions](https://github.com/bigwalkdoe/spectre-security/actions)
+- [Security Tab](https://github.com/bigwalkdoe/spectre-security/security)
+- [Drift Issues](https://github.com/bigwalkdoe/spectre-security/issues?q=label%3Adrift-detection)
+- [Dependabot Alerts](https://github.com/bigwalkdoe/spectre-security/security/dependabot)
+- [Code Scanning Alerts](https://github.com/bigwalkdoe/spectre-security/security/code-scanning)
 
 ---
 

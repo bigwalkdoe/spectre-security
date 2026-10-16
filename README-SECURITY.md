@@ -1,7 +1,7 @@
-# Security Architecture
+# Spectre Security Architecture
 
 ## Overview
-This repository implements a defense-in-depth security strategy for the GitHub scripts project.
+This repository implements a defense-in-depth security strategy for Spectre Security.
 
 ## OPA Security Policies
 Four policy packages enforce security baselines:
@@ -90,4 +90,4 @@ Four policy packages enforce security baselines:
 
 ## License
 
-This security framework is maintained internally and follows organizational security policies.
+MIT License - See [LICENSE](LICENSE) for details.

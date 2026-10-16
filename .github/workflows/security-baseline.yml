@@ -197,7 +197,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
-          scan-ref: '${{ secrets.DOCKERHUB_USERNAME }}/scripts:latest'
+          scan-ref: '${{ secrets.DOCKERHUB_USERNAME }}/spectre-security:latest'
           format: 'sarif'
           output: 'trivy-image-results.sarif'
           severity: 'CRITICAL,HIGH'

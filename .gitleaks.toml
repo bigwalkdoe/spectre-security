@@ -1,14 +1,28 @@
 # Gitleaks Configuration
 title = "Repository Secret Scanning"
 
+# CRITICAL: without this, supplying --config replaces the built-in ruleset
+# entirely and the scan silently detects nothing. Verified against a planted
+# ghp_ token: no-op config reports "no leaks found" on a file containing one.
+[extend]
+useDefault = true
+
 [allowlist]
 description = "Allowlist for known false positives"
+
+# Trivy reports embed upstream image build metadata. All 188 suppressed hits
+# here are false positives on base-image strings: GPG key fingerprints
+# ("ENV GPG_KEY=7169605F...") and "sha1:<40 hex>" digests.
 paths = [
-    "security/reports/",           # Trivy scan reports contain GPG keys
-    "security/aide/",              # AIDE database files
-    "security/logs/",              # Log files
+    "security/reports/",           # Trivy scan reports
+    "security/aide/",              # Gzipped AIDE integrity databases (binary,
+                                    # and they enumerate the host's file manifest)
 ]
+
+# Content-scoped false positives. This config previously allowlisted every
+# ".*\.json$" and ".*\.log$" file repo-wide, which would hide a real secret
+# committed into any report or log file. Only the Trivy "Maintainer" field
+# needs an explicit pattern.
 regexes = [
-    ".*\\.json$",                  # JSON report files
-    ".*\\.log$",                   # Log files
+    '"Maintainer":\s*"[^"]+"\s*,',
 ]

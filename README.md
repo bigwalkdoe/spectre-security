@@ -1,10 +1,10 @@
-# Security Baseline
+# Spectre Security
 
-A comprehensive security baseline and continuous compliance monitoring system for containerized infrastructure.
+Defense-in-depth security baseline with continuous compliance monitoring, drift detection, and SBOM generation for containerized infrastructure.
 
 ## Overview
 
-This repository implements a defense-in-depth security strategy with automated compliance monitoring, drift detection, and CI/CD integration.
+Spectre Security implements a defense-in-depth security strategy with automated compliance monitoring, drift detection, and CI/CD integration.
 
 ## Architecture
 
@@ -104,26 +104,24 @@ See [`security/compliance/COMPLIANCE_MAPPING.md`](security/compliance/COMPLIANCE
 
 ```
 security/
-├── baseline-runner.sh           # Main orchestrator (10 phases)
-├── drift-detection.sh           # Live vs baseline comparison
-├── remediate-drift.sh           # Auto-fix where possible
-├── remediation-report.sh        # Per-violation fix commands
-├── alerting.sh                  # Webhook/Slack/Email notifications
-├── update-baseline.sh           # Sync baseline to live state
-├── generate-sbom.sh             # CycloneDX + SPDX SBOM
+├── baseline-runner.sh            # Main orchestrator (10 phases)
+├── drift-detection.sh            # Live vs baseline comparison
+├── remediate-drift.sh            # Auto-fix where possible
+├── remediation-report.sh         # Per-violation fix commands
 ├── generate-remediation-commands.sh  # Prioritized fix commands
-├── test-opa-policies.sh         # 27 unit tests
-├── compliance-report.sh         # Multi-format compliance reports
-├── run-security-hardening.sh    # Local hardening checks
+├── alerting.sh                   # Webhook/Slack/Email notifications
+├── update-baseline.sh            # Sync baseline to live state
+├── generate-sbom.sh              # CycloneDX + SPDX SBOM
+├── trivy-image-scan.sh           # Docker image scanning
+├── compliance-report.sh          # Multi-format compliance reports
+├── test-opa-policies.sh          # 27 OPA policy unit tests
+├── run-security-hardening.sh     # Local hardening checks
 ├── check-file-integrity-local.sh # AIDE file integrity
-├── check-wazuh-status.sh        # Wazuh agent status
-├── generate-sbom.sh             # CycloneDX + SPDX SBOM
-├── trivy-image-scan.sh          # Docker image scanning
-├── test-opa-policies.sh         # OPA policy test suite
-├── baseline-runner.sh           # 10-phase orchestrator
-├── logs/                        # Execution logs & reports
-├── compliance/                  # Framework mappings
-├── opa/policies/                # 4 policy packages + 27 tests
+├── check-wazuh-status.sh         # Wazuh agent status
+├── security-baseline-exporter.sh # Prometheus exporter (metrics)
+├── logs/                         # Execution logs & reports
+├── compliance/                   # Framework mappings
+├── opa/policies/                 # 4 policy packages + 27 tests
 └── test-data/
     └── current-infrastructure.json  # Live infrastructure baseline
 ```
@@ -207,12 +205,16 @@ export SECURITY_EMAIL_TO="security@example.com"
 ├── .github/
 │   ├── workflows/
 │   │   ├── security-baseline.yml
-│   │   └── drift-detection.yml
+│   │   ├── drift-detection.yml
+│   │   └── policy-gate.yml
 │   ├── dependabot.yml
 │   └── dependency-review-config.yml
 ├── .gitleaks.toml
+├── .gitignore
+├── LICENSE
 ├── README.md
 ├── README-SECURITY.md
+├── RUNBOOK.md
 ├── security/
 │   ├── baseline-runner.sh
 │   ├── drift-detection.sh
@@ -221,41 +223,48 @@ export SECURITY_EMAIL_TO="security@example.com"
 │   ├── alerting.sh
 │   ├── update-baseline.sh
 │   ├── generate-sbom.sh
-│   ├── test-opa-policies.sh
-│   ├── compliance-report.sh
-│   ├── run-security-hardening.sh
-│   ├── check-file-integrity-local.sh
-│   ├── check-wazuh-status.sh
 │   ├── generate-remediation-commands.sh
 │   ├── priority-remediation.sh
+│   ├── compliance-report.sh
+│   ├── test-opa-policies.sh
 │   ├── trivy-image-scan.sh
 │   ├── run-trivy-scan.sh
 │   ├── run-zap-scan.sh
 │   ├── run-sonarqube-analysis.sh
+│   ├── run-security-hardening.sh
 │   ├── scan-dependencies.sh
 │   ├── scan-docker-images.sh
-│   ├── setup-opa-policies.sh
-│   ├── setup-intrusion-detection.sh
-│   ├── setup-secrets-management.sh
-│   ├── setup-security-scanning.sh
-│   ├── setup-rate-limiting.sh
 │   ├── api-security-hardening.sh
 │   ├── docker-security-hardening.sh
 │   ├── monitor-api-security.sh
+│   ├── check-file-integrity.sh
+│   ├── check-file-integrity-local.sh
+│   ├── check-wazuh-status.sh
 │   ├── inject-secrets.sh
-│   ├── alerting.sh
+│   ├── setup-opa-policies.sh
+│   ├── setup-intrusion-detection.sh
+│   ├── setup-rate-limiting.sh
+│   ├── setup-secrets-management.sh
+│   ├── setup-security-scanning.sh
+│   ├── security-baseline-exporter.sh
+│   ├── security-baseline-http-exporter.sh
 │   ├── logs/
 │   ├── compliance/
-│   ├── opa/policies/
-│   ├── test-data/
 │   ├── compliance-reports/
 │   ├── reports/
+│   ├── opa/
+│   │   ├── policies/
+│   │   └── versions/
+│   ├── test-data/
 │   ├── zap/
-│   ├── sonarqube/
-│   └── test-opa-policies.sh
+│   └── sonarqube/
+├── scripts/
+│   ├── configure-alerting.sh
+│   └── policy-version-manager.sh
 ├── backups/
 ├── logging/
 ├── maintenance/
+├── monitoring/
 ├── network/
 ├── performance/
 └── *.sh (utility scripts)

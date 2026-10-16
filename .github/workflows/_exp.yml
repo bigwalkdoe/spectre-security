@@ -1,0 +1,14 @@
+name: BTEST_exp
+on:
+  push:
+    branches: [main]
+jobs:
+  docker-image-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        # if: secrets.DOCKERHUB_USERNAME != ''

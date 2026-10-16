@@ -32,4 +32,4 @@ if [ -n "$EMAIL_TO" ]; then
 fi
 
 echo ""
-echo "Or add manually at: https://github.com/bigwalkdoe/scripts/settings/secrets/actions"
+echo "Or add manually at: https://github.com/bigwalkdoe/spectre-security/settings/secrets/actions"

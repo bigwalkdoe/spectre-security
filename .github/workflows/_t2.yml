@@ -1,0 +1,109 @@
+name: SBtrimmed
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+
+jobs:
+  security-baseline:
+    name: Security Baseline Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for Gitleaks
+      
+      - name: Set up Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '1'
+          ignore-unfixed: true
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy'
+      
+      - name: Set up Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: 'detect --source . --no-banner --config .gitleaks.toml --report-format sarif --report-path gitleaks-results.sarif'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Gitleaks results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'gitleaks-results.sarif'
+          category: 'gitleaks'
+      
+      - name: Run OPA Policy Validation
+        if: hashFiles('security/opa/policies/*.rego') != ''
+        run: |
+          curl -L -o opa https://github.com/open-policy-agent/opa/releases/download/v0.67.0/opa_linux_amd64_static
+          chmod +x opa
+          for policy in security/opa/policies/*.rego; do
+            echo "Validating $policy..."
+            ./opa check "$policy" || exit 1
+          done
+      
+      - name: Run Security Hardening Checks
+        run: |
+          chmod +x security/run-security-hardening.sh
+          ./security/run-security-hardening.sh
+      
+      - name: Run AIDE File Integrity Check
+        run: |
+          chmod +x security/check-file-integrity-local.sh
+          ./security/check-file-integrity-local.sh
+      
+      - name: Wazuh Status Check
+        run: |
+          chmod +x security/check-wazuh-status.sh
+          ./security/check-wazuh-status.sh || true  # Non-blocking
+      
+      - name: Run Baseline Runner (Full)
+        run: |
+          chmod +x security/baseline-runner.sh
+          ./security/baseline-runner.sh
+      
+      - name: Generate SBOM
+        run: |
+          chmod +x security/generate-sbom.sh
+          ./security/generate-sbom.sh
+      
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-artifacts
+          path: security/logs/sbom-*/
+          retention-days: 90
+      
+      - name: Upload Baseline Logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-baseline-logs
+          path: security/logs/
+          retention-days: 30

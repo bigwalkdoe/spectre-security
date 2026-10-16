@@ -1,0 +1,76 @@
+name: BTEST_driftdetection
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+
+jobs:
+  drift-detection:
+    name: Infrastructure Drift Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'schedule' || github.event_name == 'push'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Run Drift Detection
+        run: |
+          chmod +x security/drift-detection.sh
+          ./security/drift-detection.sh
+        continue-on-error: true  # Don't fail build, just report
+      
+      - name: Upload Drift Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: drift-report
+          path: security/logs/drift-report-*
+          retention-days: 30
+      
+      - name: Comment on PR with Drift Results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const logsDir = 'security/logs';
+            const files = fs.readdirSync(logsDir).filter(f => f.startsWith('drift-report-') && f.endsWith('.json'));
+            if (files.length > 0) {
+              const latest = files.sort().reverse()[0];
+              const report = JSON.parse(fs.readFileSync(path.join(logsDir, latest), 'utf8'));
+              const driftCount = Object.values(report.categories || {}).flatMap(c => Object.keys(c)).length;
+              const driftDetected = report.drift_detected;
+              
+              let body = `## 🔍 Infrastructure Drift Detection\n\n`;
+              body += `**Status:** ${driftDetected ? '⚠️ Drift Detected' : '✅ No Drift'}\n`;
+              body += `**Issues Found:** ${driftCount}\n\n`;
+              
+              if (driftDetected) {
+                body += `### Details\n`;
+                for (const [category, checks] of Object.entries(report.categories)) {
+                  body += `\n#### ${category}\n`;
+                  for (const [check, details] of Object.entries(checks)) {
+                    body += `- **${check}**: ${details.status} (expected: ${details.expected}, actual: ${details.actual})\n`;
+                  }
+                }
+                body += `\n> Run \`./security/drift-detection.sh\` locally for full details.`;
+              }
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+

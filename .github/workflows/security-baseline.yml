@@ -45,14 +45,16 @@ jobs:
       
       - name: Set up Gitleaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          args: 'detect --source . --no-banner --config .gitleaks.toml --report-format sarif --report-path gitleaks-results.sarif'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_REPORT_FORMAT: sarif
+          GITLEAKS_REPORT: gitleaks-results.sarif
+          GITLEAKS_LOG_OPTS: error  # quiet output unless a leak is found
       
       - name: Upload Gitleaks results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('gitleaks-results.sarif') != ''
         with:
           sarif_file: 'gitleaks-results.sarif'
           category: 'gitleaks'

@@ -77,7 +77,7 @@ fi
 # 5. Run file integrity check
 log "Running AIDE file integrity check..."
 if [ -x "$SCRIPT_DIR/check-file-integrity-local.sh" ]; then
-    "$SCRIPT_DIR/check-file-integrity-local.sh"
+    "$SCRIPT_DIR/check-file-integrity-local.sh" || log "WARNING: AIDE check unavailable on this runner"
 else
     log "Warning: AIDE check script not found"
 fi

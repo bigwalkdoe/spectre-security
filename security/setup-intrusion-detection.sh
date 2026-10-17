@@ -111,7 +111,7 @@ setup_aide() {
     fi
 
     # Create AIDE configuration
-    sudo bash -c 'cat > /etc/aide.conf << "AIDE_CONF"
+    sudo bash -c 'cat > /etc/aide.conf << AIDE_CONF
 # AIDE Configuration for System Maintenance
 @@define DBDIR /var/lib/aide
 @@define LOGDIR /var/log/aide
@@ -235,7 +235,7 @@ setup_wazuh() {
 
     # Create Wazuh configuration
     if [ -f /var/ossec/etc/ossec.conf ]; then
-        sudo bash -c 'cat > /var/ossec/etc/ossec.conf << "OSSEC_CONF"
+        sudo bash -c 'cat > /var/ossec/etc/ossec.conf << OSSEC_CONF
 <ossec_config>
   <client>
     <server>

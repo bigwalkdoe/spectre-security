@@ -96,7 +96,7 @@ jobs:
           ./security/generate-sbom.sh
       
       - name: Upload SBOM Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: sbom-artifacts
@@ -104,7 +104,7 @@ jobs:
           retention-days: 90
       
       - name: Upload Baseline Logs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-baseline-logs
@@ -131,7 +131,7 @@ jobs:
         continue-on-error: true  # Don't fail build, just report
       
       - name: Upload Drift Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: drift-report

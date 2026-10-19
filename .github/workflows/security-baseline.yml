@@ -37,7 +37,7 @@ jobs:
           ignore-unfixed: true
       
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -53,7 +53,7 @@ jobs:
           GITLEAKS_LOG_OPTS: error  # quiet output unless a leak is found
       
       - name: Upload Gitleaks results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('gitleaks-results.sarif') != ''
         with:
           sarif_file: 'gitleaks-results.sarif'
@@ -209,7 +209,7 @@ jobs:
           exit-code: '1'
       
       - name: Upload Docker scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-image-results.sarif') != ''
         with:
           sarif_file: 'trivy-image-results.sarif'

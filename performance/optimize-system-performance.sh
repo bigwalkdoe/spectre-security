@@ -97,16 +97,6 @@ EOF
 chmod +x ${SPECTRE_REPO}/performance/check-performance.sh
 
 # Create systemd timer for performance monitoring
-sudo bash -c 'cat > /etc/systemd/system/performance-check.service << "EOF"
-[Unit]
-Description=Performance Monitoring Service
-
-[Service]
-Type=oneshot
-ExecStart=${SPECTRE_REPO}/performance/check-performance.sh
-User=deon
-EOF'
-
 sudo bash -c 'cat > /etc/systemd/system/performance-check.timer << "EOF"
 [Unit]
 Description=Performance Monitoring Timer
@@ -118,6 +108,22 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF'
+
+# ${SPECTRE_REPO} must expand in this shell, not in sudo's: env_reset strips the
+# environment and the variable is never exported, so inside sudo bash -c the
+# placeholder expands to nothing; the old quoted-delimiter form instead wrote
+# the literal `${SPECTRE_REPO}`, which systemd rejects with
+# "Neither a valid executable name nor an absolute path" on every timer tick.
+# Here the outer shell expands it and sudo only performs the write.
+sudo tee /etc/systemd/system/performance-check.service > /dev/null << EOF
+[Unit]
+Description=Performance Monitoring Service
+
+[Service]
+Type=oneshot
+ExecStart=${SPECTRE_REPO}/performance/check-performance.sh
+User=deon
+EOF
 
 sudo systemctl enable --now performance-check.timer
 

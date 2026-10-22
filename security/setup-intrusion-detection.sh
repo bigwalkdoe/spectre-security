@@ -110,8 +110,12 @@ setup_aide() {
         sudo dnf install -y aide 2>/dev/null || sudo apt install -y aide 2>/dev/null || true
     fi
 
-    # Create AIDE configuration
-    sudo bash -c 'cat > /etc/aide.conf << AIDE_CONF
+    # Create AIDE configuration.
+    # ${SPECTRE_HOME} must expand in this shell, not in sudo's: env_reset strips
+    # the environment and the variable is never exported, so inside sudo bash -c
+    # the placeholder would expand to nothing — aide would end up watching a
+    # top-level /scripts instead of the suite. Expand here; sudo only writes.
+    sudo tee /etc/aide.conf > /dev/null << AIDE_CONF
 # AIDE Configuration for System Maintenance
 @@define DBDIR /var/lib/aide
 @@define LOGDIR /var/log/aide
@@ -167,7 +171,7 @@ ${SPECTRE_HOME}/dev/github/system-maintenance CONTENT_EX
 !/var/lib/docker
 !/var/cache
 !${SPECTRE_HOME}/.cache
-AIDE_CONF'
+AIDE_CONF
 
     sudo mkdir -p /var/lib/aide /var/log/aide
     sudo aideinit 2>/dev/null || sudo aide --init 2>/dev/null || true
@@ -235,7 +239,9 @@ setup_wazuh() {
 
     # Create Wazuh configuration
     if [ -f /var/ossec/etc/ossec.conf ]; then
-        sudo bash -c 'cat > /var/ossec/etc/ossec.conf << OSSEC_CONF
+        # Same as the aide.conf block above: expansion must run outside sudo,
+        # since only this shell has SPECTRE_HOME defined.
+        sudo tee /var/ossec/etc/ossec.conf > /dev/null << OSSEC_CONF
 <ossec_config>
   <client>
     <server>
@@ -279,7 +285,7 @@ setup_wazuh() {
     <location>/var/lib/docker/containers</location>
   </localfile>
 </ossec_config>
-OSSEC_CONF'
+OSSEC_CONF
         echo "Wazuh agent configured"
     fi
 

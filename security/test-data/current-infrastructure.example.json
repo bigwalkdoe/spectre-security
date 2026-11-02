@@ -31,14 +31,24 @@
     }
   ],
   "network": {
-    "open_ports": [8000]
+    "open_ports": [8000],
+    "remote_access": false,
+    "vpn_enabled": true,
+    "container_network": "bridge"
   },
   "compliance": {
     "firewall_enabled": true,
     "ssh_password_auth": false,
     "audit_logging_enabled": true,
     "intrusion_detection_active": true,
-    "file_integrity_monitoring": true
+    "file_integrity_monitoring": true,
+    "security_scanning_enabled": true
+  },
+  "backup": {
+    "encrypted": true,
+    "retention_days": 14,
+    "offsite_replication": true,
+    "last_success_age": 3600
   },
   "updated": 0,
   "updated_iso": "1970-01-01T00:00:00Z"

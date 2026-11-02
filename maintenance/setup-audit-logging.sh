@@ -21,7 +21,10 @@ setup_auditd() {
     echo "[1/4] Configuring system audit logging..."
     
     if command -v auditd >/dev/null 2>&1; then
-        sudo bash -c 'cat > /etc/audit/rules.d/system-maintenance.rules << "AUDIT_RULES"
+        # ${SPECTRE_REPO}/${SPECTRE_HOME} must expand in this shell, not in sudo's:
+        # env_reset strips the environment, so an unquoted sudo bash -c would
+        # write literal placeholders (or nothing) into the audit rules.
+        sudo tee /etc/audit/rules.d/system-maintenance.rules > /dev/null << AUDIT_RULES
 # System Maintenance audit rules
 
 # Monitor system administration
@@ -61,7 +64,7 @@ setup_auditd() {
 
 # Monitor firewall rules
 -w /etc/firewalld/ -p wa -k firewall_changes
-AUDIT_RULES'
+AUDIT_RULES
         sudo systemctl restart auditd 2>/dev/null || echo "  auditd rules installed (restart auditd to apply)"
         echo "  System audit rules configured"
     else

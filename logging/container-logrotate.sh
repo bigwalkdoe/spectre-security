@@ -31,7 +31,10 @@ EOF'
 fi
 
 # System log rotation for all maintenance logs
-sudo bash -c 'cat > /etc/logrotate.d/system-maintenance << "EOF"
+# ${SPECTRE_REPO}/${SPECTRE_HOME} must expand in this shell, not in sudo's:
+# env_reset strips the environment, so an unquoted sudo bash -c would write
+# literal placeholders (or nothing) into the logrotate config.
+sudo tee /etc/logrotate.d/system-maintenance > /dev/null << EOF
 /var/log/system-maintenance/*.log
 ${SPECTRE_REPO}/logs/*.log
 /var/log/backup.log
@@ -52,7 +55,7 @@ ${SPECTRE_HOME}/.local/share/api-security.log
         logger -p user.info "Log rotation completed for system-maintenance logs"
     endscript
 }
-EOF'
+EOF
 
 sudo bash -c 'cat > /etc/logrotate.d/docker-containers << "EOF"
 /var/lib/docker/containers/*/*.log {
